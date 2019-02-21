@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+	<title>D-Bur Youtube</title>
+	<link rel="stylesheet" type="text/css" href="stylesheets/reset.css">
+	<link rel="stylesheet" type="text/css" href="stylesheets/style.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="javascripts/youtube_script.js"></script>
+  <script src="javascripts/handlebars-v4.0.5.js"></script>
+  <script src="javascripts/results.js"></script>
+</head>
+<body>
+	<main>
+		<div id="content"></div>
+    <div id="player_modal_layer"></div>
+    <div id="player_container">
+      <div id="player"></div>
+    </div>
+    <div id="seperator"></div>
+	</main>
+
+
+
+  <script type="text/handlebars=x" id="vid_thumb_partial" type="partial">
+ --><figure
+    {{#if (notHebrew snippet.title)}}
+      style="direction: ltr" 
+    {{/if}}
+    data-vid_id={{id.videoId}}>
+      <img src="{{snippet.thumbnails.high.url}}">
+      <figcaption>{{shortenTitle snippet.title}}</figcaption>
+    </figure><!--
+  </script>
+
+  <script type="text/handlebars=x" id="nav_page_partial" type="partial">
+    <li><a href="#">{{pageNum @index}}</a></li>
+  </script>
+
+  <script type="text/handlebars=x" id="thumbnails_template">
+    {{#each vids}}
+      {{> vid_thumb_partial}}
+    {{/each}}
+  </script>
+
+  <script type="text/handlebars=x" id="page_nav_template">
+    {{#each pages}}
+      {{> nav_page_partial}}
+    {{/each}}
+  </script>
+</body>
+</html>

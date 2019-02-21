@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>הגדרות משתמש</title>
+  <link rel="stylesheet" type="text/css" href="stylesheets/style.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="javascripts/settings.js"></script>
+</head>
+<body>
+  <header>
+    <div id="logo"></div>
+    <h1>הגדרות</h1>
+  </header>
+  <form action="/settings" method="post">
+    <dl>
+      <dt><label>מספר שניות השהייה לפני תחילת נגינה:</label></dt>
+      <dd><input type="number" name="time_to_play" value="1" max="5" min="1"></dd>
+      <dd class="error">נא להכניס מספר שניות בין 1-5</dd>
+    </dl>
+    <dl>
+      <dt><label for="row_number">מספר שורות בדף תוצאות:</label>
+      <dd>
+        <select name="row_number" size="4">
+          <option selected>1</option>
+          <option>2</option>
+          <option>3</option>
+          <option>4</option>
+        </select>
+      </dd>
+
+      <dt><label for="col_number">מספר עמודות בדף תוצאות:</label>
+      <dd>
+        <select name="col_number" size="2">
+          <option selected>2</option>
+          <option>4</option>
+        </select>
+      </dd>
+    </dl>
+    <input type="submit" value="שמור">
+  </form>
+</body>
+</html>
