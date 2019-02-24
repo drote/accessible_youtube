@@ -5,20 +5,40 @@ html {
 }
 
 body {
+	margin: 0;
 	overflow: hidden;
 	height: 100%;
 
 }
 
+main {
+	position: absolute;
+	height: 90%;
+	width: 100%;
+	transform: translateY(10%);
+}
+
 header {
 	display: flex;
-	position: relative;
+	position: absolute;
 	top: 0;
 	width: 100%;
 	background: #FAFAFA;
-	height: 110px;
+	height: 10%;
 	justify-content: flex-start;
 	align-items: center;
+}
+
+h1 {
+	font-size: 1.5rem;
+}
+
+header a {
+	position: absolute;
+	right: 4px;
+	top: 70%;
+	cursor: pointer;
+	font-size: 0.8rem;
 }
 
 header a,
@@ -54,7 +74,7 @@ input[type="submit"]:hover {
 	background-image: url(../data/icons/logo.jpg);
 	background-repeat: no-repeat;
 	background-size: contain;
-	margin: 0 50px;
+	margin: 0 75px;
 	height: 100%;
 	width: 100px;
 	background-position: 0 0;
@@ -74,13 +94,37 @@ input[type="submit"]:hover {
 	width: 10%;
 }
 
-/* SEARCH RESULTS */
-main {
-	height: 100%;
+#box.ga_ind {
+	border: 2px solid grey;
+	border-radius: 2px;
+	box-shadow: 1px 2px;
+	position: absolute;
+	left: 20px;
+	top: 14px;
+	width: 45px;
+	height: 45px;
+	background: red;
 }
 
+#box.ga_ind.active {
+	background: green;
+}
+
+#box.ga_ind:active {
+	box-shadow: none;
+	left: 21px;
+	top: 16px;
+}
+
+#text.ga_ind {
+	position: absolute;
+	left: 100px;
+}
+
+/* SEARCH RESULTS */
+
 #content {
-	padding-top: 3%;
+	margin-top: 1%;
 	box-sizing: border-box;
 	position: absolute;
 	height: 100%;
@@ -88,19 +132,31 @@ main {
 	display: flex;
 	flex-wrap: wrap;
 	justify-content: space-evenly;
+	z-index: -1;
 */}
 
-figure {
+.figure {
 	cursor: pointer;
 	border: 2px solid black;
 	border-radius: 10px;
 	box-sizing: border-box;
-	margin-bottom: var(--figurePadding);
+/*	margin-bottom: var(--figurePadding);*/
 	width: var(--figureWidth);
 	height: var(--figureHeight);
 	font-weight: bold;
 	font-family: Arial, sans-serif;
+	font-size: var(--figureFont);
 	overflow: hidden;
+	position: relative;
+	background-color: transparent;
+}
+
+figure {
+	background-color: white;
+	position: relative;
+	width: 100%;
+	height: 100%;
+	z-index: -1;
 }
 
 img {
@@ -110,6 +166,7 @@ img {
 	margin: 2% 0 1.5% 0;
 	left: 50%;
 	transform: translateX(-50%);
+	z-index: -1;
 }
 
 figcaption {
@@ -118,9 +175,10 @@ figcaption {
 	width: 90%;
 	margin: 0 auto;
 	text-align: center;
+	z-index: -1;
 }
 
-.selected {
+figure.highlight {
 	background-color: lightBlue;
 }
 
@@ -128,6 +186,17 @@ figcaption {
 	width: 200px;
 	margin: 0 auto 3px auto;
 	text-align: center;
+}
+
+.countdown_bar {
+	display: none;
+	width: 10px;
+	height: 10px;
+	background-color: green;
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+	right: 10px;
 }
 
 li {
@@ -208,6 +277,12 @@ input[type="submit"] {
 	margin-right: 45px;
 }
 
+input[type="range"] {
+	cursor: pointer;
+	width: 100%;
+	text-align: center;
+}
+
 select {
 	width: 100%;
 	font-size: 1rem;
@@ -227,9 +302,43 @@ dd {
 	margin: 5px 0;
 }
 
-.error {
+#settings {
 	display: none;
-	font-size: 0.8rem;
-	color: red;
-	margin-right: 9px;
+	position: fixed;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 325px;
+	height: 540px;
+	background-color: #f5fce0;
+	border-top: 2px solid black;
+	border-left: 2px solid black;
+	border-bottom: 2px solid black;
+}
+
+#settings header {
+	box-sizing: border-box;
+	padding-right: 50px;
+	position: static;
+	background-color: #cbdd9f;
+}
+
+#settings main {
+	box-sizing: border-box;
+	padding-right: 40px;
+	position: relative;
+	top: -40px;
+}
+
+#settings #logo {
+	display: none;
+}
+
+#settings_modal_layer {
+	display: none;
+	background-color: rgba(115, 115, 115, 0.7);
+  position: absolute;
+  top: -10%;
+  left: 0;
+  width: 100%;
+  height: 100vh;
 }

@@ -1,13 +1,13 @@
 'strict-mode';
 
 const FIGURE_WIDTHS = {
-	'4': '21%',
+	'4': '23%',
 	'2': '45%',
 };
 
 const FIGURE_HEIGHTS = {
 	'4': '22%',
-	'3': '26%',
+	'3': '30%',
 	'2': '40%',
 	'1': '90%',
 };
@@ -19,15 +19,8 @@ const FIGURE_FONT_SIZE = {
 	'1': '2rem',
 }
 
-const FIGURE_PADDING = {
-	'4': '2%',
-	'3': '5%',
-	'2': '7%',
-	'1': '9%',
-}
-
 const DEFAULT_SETTINGS = {
-	time_to_play: 1,
+	time_to_play: 100,
 	col_number: 4,
 	row_number: 2,
 }
@@ -36,7 +29,8 @@ const NAVIGATION_KEYS = [ ENTER, LEFT_A, UP_A, RIGHT_A, DOWN_A ] = [ 13, 37, 38,
 const PLAY_KEYS = [ ESCAPE, SPACEBAR, F, K, M ] = [ 27, 32, 70, 75, 77, LEFT_A, UP_A, RIGHT_A, DOWN_A ];
 const API_KEY = 'AIzaSyD0HiZ1FdFt3QK10ndUBUfddC6hyj19IW8';
 const YOUTUBE_API_URL ='https://www.googleapis.com/youtube/v3/search';
-const DEFAULT_QUERY_STRING = `part=snippet&key=${API_KEY}&maxResults=50`;
+const DEFAULT_QUERY_STRING = `part=snippet&key=${API_KEY}&maxResults=36`;
+let page;
 
 $(function() {
 	const $body = $(document.body);
@@ -45,12 +39,14 @@ $(function() {
 	const $playerContainer = $('#player_container');
 	const $seperator = $('#seperator');
 	const PLAYER_DIVS = [$playerContainer, $playerModal, $seperator];
+	const $settingsA = $('header a');
 
 	const Results = {
 		init(vids, vidsPerChunk) {
 			this.vidsPerChunk = vidsPerChunk;
 			this.allResults = vids;
 			this.chunks = this.resultsToEuqalLengthChunks(this.allResults, this.vidsPerChunk);
+			this.chunkNumber = this.chunks.length;
 
 			return this;
 		},
@@ -72,6 +68,11 @@ $(function() {
 
 			return chunks;
 		},
+		modifyResults(vidsPerChunk) {
+			this.vidsPerChunk = vidsPerChunk;
+			this.chunks = this.resultsToEuqalLengthChunks(this.allResults, this.vidsPerChunk);
+			this.chunkNumber = this.chunks.length;
+		}
 	};
 
 	const PlayerManager = (function() {
@@ -163,7 +164,8 @@ $(function() {
 	})();
 
 	const Page = (function() {
-		let timeout;
+		let playTimeout;
+		let selectTimeout;
 
 		const endsWithSpace = (title) => title.substring(title.length -1) === ' ';
 		const tooLong = (title) => title.length > 49;
@@ -197,22 +199,23 @@ $(function() {
 			}
 
 			let $currentSelected = $('.selected');
+			let currentIdx = $currentSelected.index();
 
 			switch (key) {
 				case ENTER:
 					this.startVideo($currentSelected);
 					break;
 				case LEFT_A:
-					this.navigateLeftFrom($currentSelected);
+					this.navigateFrom(currentIdx, 'left');
 					break;
 				case UP_A:
-					this.navigateUpFrom($currentSelected);
+					this.navigateFrom(currentIdx, 'up');
 					break;
 				case RIGHT_A:
-					this.navigateRightFrom($currentSelected);
+					this.navigateFrom(currentIdx, 'right');
 					break;
 				case DOWN_A:
-					this.navigateDownFrom($currentSelected);
+					this.navigateFrom(currentIdx, 'down');;
 			}
 		}
 
@@ -242,6 +245,7 @@ $(function() {
 					break;
 				case RIGHT_A:
 					player.changeLocation(10);
+					break;
 				case DOWN_A:
 					player.changeVolume(-5);
 					break;
@@ -261,22 +265,65 @@ $(function() {
 		}
 
 		const mouseInHandler = function(e) {
-			clearInterval(timeout);
+			if (this.eyegazeDisabled() || this.eyegazeBreak()) {
+				return;
+			}
 
-			let $fig = $(e.currentTarget);
-			let delay = this.userSettings['time_to_play'] * 1000;
+			let $fig = $(e.target);
 
-			timeout = setTimeout(() => {
-				this.startVideo($fig)
-			}, delay);
+			if ($fig.is('.selected')) {
+				let delay = this.userSettings['time_to_play'] * 10;
+
+				this.countdownAnimate($fig, delay);
+				playTimeout = setTimeout(() => {
+					this.startVideo($fig)
+				}, delay);
+			} else {
+				selectTimeout = setTimeout(() => {
+					this.selectFigure($fig.index());
+					mouseInHandler.call(this, e);
+				}, 1000);
+			}
 		}
 
-		const mouseoutHandler = function(e) {
-			clearInterval(timeout);
+		const mouseoutHandler = function() {
+			if (this.eyegazeDisabled() || this.eyegazeBreak()) {
+				return;
+			}
+
+			this.cancelCountdown();
+			clearInterval(selectTimeout);
+			clearInterval(playTimeout);
+		}
+
+		const openSettings = function(e) {
+			e.preventDefault();
+
+			if ($('#settings').not(':visible')) {
+				$('#settings_modal_layer').show();
+				let $div = $('#settings');
+				$div.load('/settings', function() {
+					$body.append($div);
+					$div.css('width', '0').show();
+					$div.animate({width: '25%'}, 700);
+				});
+			}
 		}
 
 		const togglePlayerDivs = () => {
 			PLAYER_DIVS.forEach(($div) => $div.toggle());
+		}
+
+		const eyeGazeToggle = function(e) {
+			if ($('#box.ga_ind').is('.active')) {
+				$('#box.ga_ind').removeClass('active');
+				$('#text.ga_ind').find('span').text('מופסק');
+				this.userSettings.gaBreak = true;
+			} else {
+				$('#box.ga_ind').addClass('active');
+				$('#text.ga_ind').find('span').text('מופעל');
+				this.userSettings.gaBreak = false;
+			}
 		}
 
 		return {
@@ -284,10 +331,10 @@ $(function() {
 			playerManager: null,
 			userSettings: null,
 
-			init(query) {
+			init() {
 				this.chunkN = 0;
 				this.getTemplates();
-				this.initializeSearch(query);
+				this.initializeSearch();
 				this.bindEvents();
 
 				return this;
@@ -300,27 +347,42 @@ $(function() {
 			},
 			bindEvents() {
 				$body.on('keydown', keydownHandler.bind(this));
-				$contentDiv.on('mouseover', 'figure', mouseInHandler.bind(this));
-				$contentDiv.on('mouseout', 'figure', mouseoutHandler.bind(this));
-			},
-			initializeSearch(query) {
-				let searchCallback = this.searchAndHandleResults.bind(this, query);
 
+				$contentDiv.on('mouseenter', '.figure', mouseInHandler.bind(this));
+				$contentDiv.on('mouseleave', '.figure', mouseoutHandler.bind(this));
+				$settingsA.on('click', openSettings.bind(this));
+				$('#box.ga_ind').on('click', eyeGazeToggle.bind(this));
+			},
+			initializeSearch() {
+				const urlParams = new URLSearchParams(window.location.search);
+				const searchQuery = urlParams.get('q');
+				let searchCallback = this.searchAndHandleResults.bind(this, encodeURI(searchQuery));
+
+				this.query = searchQuery;
 				this.getUserSettings(searchCallback)
 			},
-			getUserSettings(callback) {
-				let callbacks = [this.assignUserSettings.bind(this), callback];
+			getUserSettings(...callbacks) {
+				let doneCallbacks = [this.assignUserSettings.bind(this), ...callbacks];
 
 				$.ajax({
 					url: 'user_settings'
-				}).done(callbacks);
+				}).done(doneCallbacks);
 			},
 			assignUserSettings(response) {
 				let settings = DEFAULT_SETTINGS;
 
 				if (response) {
 					settings = JSON.parse(response);
-					Object.keys(settings).forEach((key) => settings[key] = parseInt(settings[key], 10));
+
+					Object.keys(settings).forEach((key) => {
+						let val = settings[key];
+
+						if ($.isNumeric(settings[key])) {
+							val = parseInt(settings[key], 10);
+						}
+
+						settings[key] = val;
+					});
 				}
 
 				this.userSettings = settings;
@@ -347,135 +409,120 @@ $(function() {
 			},
 			initialDisplay() {
 				this.setCSSProperties();
-				this.appendNextChunkToContent();
-				this.selectFirstFigure();
-				this.scrollToTopRowSelection();
+				this.fillHeader();
+				this.showChunk(0);
+				this.selectFigure(0);
+			},
+			refreshDisplay() {
+				this.chunkN = 0;
+				this.setCSSProperties();
+				this.fillHeader();
+				this.showChunk(0);
+				this.selectFigure(0);
+			},
+			refreshView() {
+				this.getUserSettings(this.modifyResultsObj.bind(this), this.refreshDisplay.bind(this));
+			},
+			modifyResultsObj() {
+				let vidsPerChunk = this.userSettings['col_number'] * this.userSettings['row_number'];
+				this.results.modifyResults(vidsPerChunk);
 			},
 			setCSSProperties() {
 				let settings = this.userSettings;
+				let vids = settings['col_number'] * settings['row_number'];
 				let figWidth = FIGURE_WIDTHS[settings['col_number']];
 				let figHeight = FIGURE_HEIGHTS[settings['row_number']];
 				let figFont = FIGURE_FONT_SIZE[settings['row_number']];
-				let figPadding = FIGURE_PADDING[settings['row_number']];
 
 				document.body.style.setProperty('--figureWidth', figWidth);
 				document.body.style.setProperty('--figureHeight', figHeight);
 				document.body.style.setProperty('--figureFont', figFont || '0.8rem');
-				document.body.style.setProperty('--figurePadding', figPadding || '5%');
+				$contentDiv.css('backgroundColor', settings['background_color']);
 			},
-			appendNextChunkToContent() {
-				let vids = this.results.getChunk(this.chunkN);
+			fillHeader() {
+				$('#query').text(this.query);
+				$('.ga_ind').toggle(!this.eyegazeDisabled());
+			},
+			showChunk(n) {
+				let vids = this.results.getChunk(n);
 				let html = this.thumbTemplate({ vids }).replace('-->', '');
+
+				$contentDiv.children().remove();
 				$contentDiv.append(html);
 
-				this.chunkN += 1;
+				this.chunkN = n;
 			},
-			selectFirstFigure() {
-				let $first = this.figures(0);
-
-				this.selectFigure($first);
-			},
-			selectFigure($element) {
+			selectFigure(idx) {
 				$('.selected').removeClass('selected');
-				$element.addClass('selected');
-
-				this.scrollToSelectedRow();
+				$('.highlight').removeClass('highlight');
+				this.figures(idx).addClass('selected');
+				this.figures(idx).find('figure').addClass('highlight');
 			},
-			navigateLeftFrom($fig) {
-				let $next = $fig.next();
+			showNextChunk() {
+				let nextChunk = (this.chunkN + 1) % this.results.chunkNumber;
 
-				if (empty($next)) {
-					$next = this.figures(0);
+				this.showChunk(nextChunk);
+			},
+			showPrevChunk() {
+				let prevChunk = this.chunkN - 1;
+
+				if (prevChunk < 0) {
+					prevChunk = this.results.chunkNumber - 1;
 				}
 
-				this.selectFigure($next);
+				this.showChunk(prevChunk);
 			},
-			navigateRightFrom($fig) {
-				let $next = $fig.prev();
+			navigateFrom(idx, direction) {
+				let change = this.getIdxChange(direction);
+				let nextIdx = idx + change;
+				let maxAllowedIdx = this.results.vidsPerChunk - 1;
 
-				if (empty($next)) {
-					$next = this.figures(-1);
+				if (nextIdx > maxAllowedIdx) {
+					this.showNextChunk();
+					nextIdx = direction === 'down' ? this.idxAcross(idx, direction) : 0;
+				} else if (nextIdx < 0) {
+					this.showPrevChunk();
+					nextIdx = direction === 'up' ? this.idxAcross(idx, direction) : -1;
 				}
 
-				this.selectFigure($next);
+				this.selectFigure(nextIdx);
 			},
-			navigateUpFrom($fig) {
+			idxAcross(idx, direction) {
 				let rowLength = this.userSettings['col_number'];
-				let figuresOnPage = this.figures().length;
-				let nextIdx = ($fig.index() - rowLength) % figuresOnPage;
-				let $next = this.figures(nextIdx);
+				let rowNum = this.userSettings['row_number'];
+				let compensation = ((rowNum - 1) * rowLength);
 
-				this.selectFigure($next);
+				if (direction === 'down') {
+					compensation = -compensation;
+				}
+
+				return idx + compensation;
 			},
-			navigateDownFrom($fig) {
+			getIdxChange(direction) {
 				let rowLength = this.userSettings['col_number'];
-				let figuresOnPage = this.figures().length;
-				let nextIdx = ($fig.index() + rowLength);
-				let $next = this.figures(nextIdx);
 
-				if (empty($next)) {
-					if (this.moreResultsAvailable()) {
-						this.appendNextChunkToContent();
-						this.navigateDownFrom($fig);
-						return;
-					} else {
-						nextIdx = ($fig.index() + rowLength) % figuresOnPage;
-						$next = this.figures(nextIdx);
-					}
-				}
-
-				this.selectFigure($next);
-			},
-			scrollToSelectedRow() {
-				let $figure = $('.selected');
-				let figTop = $figure.offset().top;
-				let height = parseInt($figure.css('height'), 10);
-				let figBottom = figTop + height;
-
-				let scrollTop = document.documentElement.scrollTop;
-				let pageBottomY = scrollTop + window.innerHeight;
-
-				if (this.topFigureNotAligned($figure)) {
-					this.scrollToTopRowSelection();
-				} else if (this.bottomFigureNotAligned($figure)) {
-					this.scrollToBottomRowSelection();
+				switch (direction) {
+					case 'left':
+						return 1;
+					case 'right':
+						return -1;
+					case 'up':
+						return -rowLength;
+					case 'down':
+						return rowLength;
 				}
 			},
-			scrollToTopRowSelection() {
-				let paddingMult = parseInt(FIGURE_PADDING[this.userSettings['row_number']], 10) * 0.01;
-				let $figure = $('.selected');
-				let figTop = $figure.offset().top;
-				let contentHeight = parseInt($('#content').css('height'), 10);
-
-				document.documentElement.scrollTop = (figTop - (contentHeight * paddingMult));
+			eyegazeDisabled() {
+				return !this.userSettings['gaze_aware'];
 			},
-			scrollToBottomRowSelection() {
-				let paddingMult = parseInt(FIGURE_PADDING[this.userSettings['row_number']], 10) * 0.01;
-				let $figure = $('.selected');
-				let figTop = $figure.offset().top;
-				let figHeight = parseInt($figure.css('height'), 10);
-				let figBottom = figTop + figHeight;
-				let contentHeight = parseInt($('#content').css('height'), 10);
-
-				document.documentElement.scrollTop = (figBottom + (contentHeight * paddingMult) - window.innerHeight);
+			eyegazeBreak() {
+				return this.userSettings['gaBreak'];
 			},
-			topFigureNotAligned($fig) {
-				let figTop = $fig.offset().top;
-
-				return document.documentElement.scrollTop > figTop;
-			},
-			bottomFigureNotAligned($fig) {
-				let figTop = $fig.offset().top;
-				let figHeight = parseInt($fig.css('height'), 10);
-				let figBottom = figTop + figHeight;
-
-				return document.documentElement.scrollTop + window.innerHeight < figBottom;
-			},
-			moreResultsAvailable() {
-				return this.results.getChunk(this.chunkN) !== undefined;
+			lastChunk(chunk) {
+				return this.results.getChunk(chunk + 1) === undefined;
 			},
 			startVideo($vid) {
-				let vidId = $vid.data('vid_id');
+				let vidId = $vid.find('figure').data('vid_id');
 				togglePlayerDivs();
 
 				if (this.firstVideo()) {
@@ -498,7 +545,7 @@ $(function() {
 				return $playerModal.is(':visible');
 			},
 			figures(n) {
-				let $figures = $('figure');
+				let $figures = $('.figure');
 
 				if (n === undefined) {
 					return $figures;
@@ -506,11 +553,21 @@ $(function() {
 
 				return $figures.eq(n);
 			},
+			countdownAnimate($fig, animLength) {
+				if ($fig.find('.countdown_bar').length === 0) {
+					let $bar = $('<div>');
+					$bar.addClass('countdown_bar');
+					$fig.append($bar);
+					$bar.show().animate({height: '100%'}, animLength, function() {
+						$bar.remove();
+					});
+				}
+			},
+			cancelCountdown($fig) {
+				$('.countdown_bar').stop(true, false).hide().remove();
+			},
 		};
 	})();
 
-	const urlParams = new URLSearchParams(window.location.search);
-	const searchQuery = encodeURI(urlParams.get('q'));
-
-	Object.create(Page).init(searchQuery);
+	page = Object.create(Page).init();
 });

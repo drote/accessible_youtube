@@ -10,26 +10,40 @@
   <script src="javascripts/results.js"></script>
 </head>
 <body>
+  <header>
+    <div id="logo"></div>
+    <h2>מציג תוצאות עבור <span id="query"></span></h2>
+    <a href="#">הגדרות</a>
+    <div id="box" class="ga_ind active"></div>
+    <p id="text" class="ga_ind">מיקוד מבט <span>מופעל</span></p>
+  </header>
 	<main>
-		<div id="content"></div>
-    <div id="player_modal_layer"></div>
-    <div id="player_container">
-      <div id="player"></div>
-    </div>
-    <div id="seperator"></div>
+    <section id="content"></section>
+
+    <section>
+      <div id="player_modal_layer"></div>
+      <div id="player_container">
+        <div id="player"></div>
+      </div>
+      <div id="seperator"></div>
+    </section>
+
+    <section>
+      <div id="settings_modal_layer"></div>
+      <div id="settings"></div>
+    </section>
 	</main>
-
-
-
   <script type="text/handlebars=x" id="vid_thumb_partial" type="partial">
- --><figure
-    {{#if (notHebrew snippet.title)}}
-      style="direction: ltr" 
-    {{/if}}
-    data-vid_id={{id.videoId}}>
-      <img src="{{snippet.thumbnails.high.url}}">
-      <figcaption>{{shortenTitle snippet.title}}</figcaption>
-    </figure><!--
+ --><div class="figure">
+      <figure
+      {{#if (notHebrew snippet.title)}}
+        style="direction: ltr" 
+      {{/if}}
+      data-vid_id={{id.videoId}}>
+        <img src="{{snippet.thumbnails.high.url}}">
+        <figcaption>{{shortenTitle snippet.title}}</figcaption>
+      </figure>
+    </div><!--
   </script>
 
   <script type="text/handlebars=x" id="nav_page_partial" type="partial">

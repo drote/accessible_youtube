@@ -5,6 +5,10 @@ require 'json'
 enable :sessions
 set :session_secret, 'secret'
 
+get '/' do
+  redirect '/search'
+end
+
 get '/search' do
   erb :search_bar_he
 end
@@ -19,7 +23,6 @@ end
 
 post '/settings' do
   session['settings'] = JSON.generate(params)
-  puts session['settings']
 end
 
 get '/user_settings' do
