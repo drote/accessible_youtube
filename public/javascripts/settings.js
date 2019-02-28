@@ -1,14 +1,19 @@
 $(function() {
-	const FORM_ERROR = 'אנא תקן את הפורם';
-	const SUCCESS_MSG = 'ההגדרות נשמרו בהצלחה';
 	const FAILURE_MSG = 'משהו לא הסתדר. אנא נסה שוב לאחר ריענון הדף.';
+	const USER_SETTINGS_URL = '/user_settings';
+
 	const $form = $('form');
-	const $sliderInput = $('[type="range"]');
-	const $sliderValue = $('#slider_value');
-	const $gazeAwareInput = $('[type="checkbox"]');
+	const $gazeAwareRadio = $('[name="gaze_aware"]');
+	const $sliderInputs = $('[type="range"]');
+	const $selectSliderInput = $('#select_delay');
+	const $clickSliderInput = $('#click_delay');
+	const $sliderVals = $('.slider_value');
+	const $clickSliderVal = $('#click_slider_value');
+	const $selectSliderVal = $('#select_slider_value');
 	const $rowNumberInput = $('#row_number');
 	const $colNumberInput = $('#col_number');
-	const $radioInputs = $('[type="radio"]');
+	const $backgroundInput = $('[type="color"]');
+	const $resetButton = $('[type="reset"]');
 
 	const Page = (function() {
 		const formToJson = ($form) => {
@@ -25,29 +30,53 @@ $(function() {
 			this.submitForm($form);
 		}
 
-		const fieldValid = function($field) {
-			return function() {
-				if ($field.is(':invalid')) {
-					$field.parent().siblings('.error').show();
-					return;
-				}
+		const changeSliderValue = function(e, $slider) {
+			$slider = $slider || $(e.target);
+			let sliderValId = $slider.attr('name').split('_')[0];
+			let $sliderVal = $(`#${sliderValId}`);
+			let newVal = $slider.val() / 10;
 
-				return true;
-			}
+			$sliderVal.text(newVal);
 		}
 
-		const changeSliderValue = function() {
-			let newVal = $sliderInput.val() / 100;
-			$sliderValue.text(newVal);
+		const toggleSlidebars = function(e) {
+			let gazeOn = $('[name="gaze_aware"]:checked').val() === 'on';
+
+			$sliderInputs.prop('disabled', !gazeOn);
+			$sliderVals.toggle(gazeOn);
 		}
 
-		const toggleSlideBar = function() {
-			if ($sliderInput.is(':disabled')) {
-				$sliderInput.prop('disabled', false);
-				$sliderInput.trigger('input');
-			} else {
-				$sliderInput.prop('disabled', true);
-				$sliderValue.text('');
+		const resetForm = function(e) {
+			e.preventDefault();
+
+			$sliderInputs.val('10');
+			$gazeAwareRadio.each(function() {
+				$radio = $(this);
+				$radio.prop('checked', $radio.val() === 'on');
+			});
+
+			$gazeAwareRadio.trigger('change');
+			$rowNumberInput.val('2');
+			$colNumberInput.val('4');
+
+			$rowNumberInput.trigger('change');
+
+
+			$sliderInputs.each(function() {
+				changeSliderValue(null, $(this));
+			});
+
+			$backgroundInput.val('#fafafa');
+		}
+
+		populateColField = function() {
+			let lastVal = parseInt($colNumberInput.val(), 10);
+			let rowNum = parseInt($rowNumberInput.val(), 10);
+			$colNumberInput.children().remove();
+
+			for (let i = rowNum; i <= 5; i += 1) {
+				let $newOption = $('<option>').text(i).prop('selected', i === lastVal);
+				$colNumberInput.append($newOption);
 			}
 		}
 
@@ -58,62 +87,63 @@ $(function() {
 			},
 			bindEvents() {
 				$form.on('submit', formSubmitHandler.bind(this));
-				$sliderInput.on('input', changeSliderValue);
-				$gazeAwareInput.on('change', toggleSlideBar);
+				$sliderInputs.on('input', changeSliderValue);
+				$gazeAwareRadio.on('change', toggleSlidebars);
+				$rowNumberInput.on('change', populateColField);
+				$resetButton.on('click', resetForm);
+			},
+			initForm() {
+				this.getUserSettings()
+						.then(function(response) {
+							if (!response) return;
+
+							this.populateFormFields(response);
+						});
+			},
+			getUserSettings() {
+				return this.ajax(USER_SETTINGS_URL);
 			},
 			submitForm($form) {
-				$.ajax({
-					method: $form.attr('method'),
-					url: $form.attr('action'),
-					data: formToJson($form),
-					context: this,
-				}).done(() => {
-					alert(SUCCESS_MSG);
-					this.redirect();
-				}).fail(() => alert(FAILURE_MSG));
-			},
-			initForm(callback) {
-				$.ajax({
-					url: 'user_settings',
-					context: this,
-				}).done((response) => {
-					if (response) {
-						this.populateFormFields(response);
-					}
-				});
+				let method = $form.attr('method');
+				let url = $form.attr('action');
+				let data = formToJson($form);
+
+				this.ajax(url, method, data)
+						.done(() => this.redirect() )
 			},
 			populateFormFields(response) {
 				let settings = JSON.parse(response);
 				let gazeOn = settings['gaze_aware'] === 'on';
 
-				$gazeAwareInput.prop('checked', gazeOn);
-				$sliderInput.prop('disabled', !gazeOn);
-
-				if (gazeOn) {
-					$sliderInput.val(settings['time_to_play']);
-					$sliderInput.trigger('input');
-				}
-
+				$selectSliderInput.val(settings['select_delay']);
+				$clickSliderInput.val(settings['click_delay']);
 				$rowNumberInput.val(settings['row_number']);
 				$colNumberInput.val(settings['col_number']);
+				$backgroundInput.val(settings['background_color']);
+				$rowNumberInput.trigger('change');
 
-				$radioInputs.each(function() {
-					$(this).prop('checked', (settings['background_color'] === $(this).val()));
+				$gazeAwareRadio.each(function() {
+					$radio = $(this);
+					$radio.prop('checked', (settings[$radio.attr('name')] === $(this).val()));
+				});
+
+				toggleSlidebars();
+				$sliderInputs.each(function() {
+					changeSliderValue(null, $(this));
+				});
+			},
+			ajax(url, method, data) {
+				return $.ajax({
+					method,
+					url,
+					data,
+					context: this,
 				});
 			},
 			redirect() {
-				if ($('#settings').length !== 0) {
-					this.closeMenuBar();
-					page.refreshView();
-				} else {
+				if (window.location !== '/results') {
 					window.location.replace('/search');
 				}
-			},
-			closeMenuBar(){
-				$('#settings').animate({width: 0}, 700, function() {
-					$('#settings_modal_layer').hide();
-					$('#settings').hide();
-				});
 			},
 		};
 	})();

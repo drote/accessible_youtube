@@ -1,65 +1,51 @@
-<!DOCTYPE html>
-<html lang="he">
-<head>
-	<title>D-Bur Youtube</title>
-	<link rel="stylesheet" type="text/css" href="stylesheets/reset.css">
-	<link rel="stylesheet" type="text/css" href="stylesheets/style.css">
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-  <script src="javascripts/youtube_script.js"></script>
-  <script src="javascripts/handlebars-v4.0.5.js"></script>
-  <script src="javascripts/results.js"></script>
-</head>
-<body>
-  <header>
-    <div id="logo"></div>
-    <h2>מציג תוצאות עבור <span id="query"></span></h2>
-    <a href="#">הגדרות</a>
-    <div id="box" class="ga_ind active"></div>
-    <p id="text" class="ga_ind">מיקוד מבט <span>מופעל</span></p>
-  </header>
-	<main>
-    <section id="content"></section>
+<% content_for :header_content_center do %>
+  <p>תוצאות עבור: <span id="query"></span></p>
+<% end %>
 
-    <section>
-      <div id="player_modal_layer"></div>
-      <div id="player_container">
-        <div id="player"></div>
-      </div>
-      <div id="seperator"></div>
-    </section>
+<% content_for :header_content_left do %>
+  <div id="ga_button" class="active">
+    <p>בחירה בהשהייה <span>מופעלת</span></p>
+  </div>
+<% end %>
 
-    <section>
-      <div id="settings_modal_layer"></div>
-      <div id="settings"></div>
-    </section>
-	</main>
-  <script type="text/handlebars=x" id="vid_thumb_partial" type="partial">
- --><div class="figure">
-      <figure
-      {{#if (notHebrew snippet.title)}}
-        style="direction: ltr" 
-      {{/if}}
-      data-vid_id={{id.videoId}}>
-        <img src="{{snippet.thumbnails.high.url}}">
-        <figcaption>{{shortenTitle snippet.title}}</figcaption>
-      </figure>
-    </div><!--
-  </script>
+<main>
+  <section id="content"></section>
 
-  <script type="text/handlebars=x" id="nav_page_partial" type="partial">
-    <li><a href="#">{{pageNum @index}}</a></li>
-  </script>
+  <section>
+    <div id="player_container">
+      <div id="player"></div>
+    </div>
+    <div id="seperator"></div>
+  </section>
 
-  <script type="text/handlebars=x" id="thumbnails_template">
-    {{#each vids}}
-      {{> vid_thumb_partial}}
-    {{/each}}
-  </script>
+  <section>
+    <div id="settings_modal_layer"></div>
+    <div id="settings"></div>
+  </section>
+</main>
 
-  <script type="text/handlebars=x" id="page_nav_template">
-    {{#each pages}}
-      {{> nav_page_partial}}
-    {{/each}}
-  </script>
-</body>
-</html>
+<script type="text/handlebars=x" id="vid_thumb_partial" type="partial">
+--><div class="wrapper">
+    <figure
+    {{#if (notHebrew snippet.title)}}
+      style="direction: ltr" 
+    {{/if}}
+    data-vid_id={{id.videoId}}>
+      <img src="{{snippet.thumbnails.high.url}}">
+      <figcaption>{{{shortenTitle snippet.title}}}</figcaption>
+    </figure>
+  </div><!--
+</script>
+
+<script type="text/handlebars=x" id="thumbnails_template">
+  {{#each vids}}
+    {{> vid_thumb_partial}}
+  {{/each}}
+</script>
+
+<script type="text/javascript" src="javascripts/temp_data.js"></script>
+
+<script type="text/javascript" src="javascripts/youtube_script.js"></script>
+
+<script type="text/javascript" src="javascripts/results.js"></script>
+
