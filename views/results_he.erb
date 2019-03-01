@@ -25,16 +25,18 @@
 </main>
 
 <script type="text/handlebars=x" id="vid_thumb_partial" type="partial">
---><div class="wrapper">
+<div class="wrapper">
     <figure
-    {{#if (notHebrew snippet.title)}}
-      style="direction: ltr" 
-    {{/if}}
     data-vid_id={{id.videoId}}>
       <img src="{{snippet.thumbnails.high.url}}">
-      <figcaption>{{{shortenTitle snippet.title}}}</figcaption>
+      <figcaption
+        {{#if (isHebrew snippet.title)}}
+          style="direction: rtl"
+        {{/if}}>
+        {{{shortenTitle snippet.title}}}
+      </figcaption>
     </figure>
-  </div><!--
+  </div>
 </script>
 
 <script type="text/handlebars=x" id="thumbnails_template">

@@ -7,13 +7,12 @@ const DEFAULT_SETTINGS = {
 	col_number: 4,
 	row_number: 2,
 	background_color: 'white',
+	select_color: '#b22222',
 }
 
-// const NAVIGATION_KEYS = [ ENTER, LEFT_A, UP_A, RIGHT_A, DOWN_A ] = [ 13, 37, 38, 39, 40 ];
-// const PLAY_KEYS = [ ESCAPE, SPACEBAR, F, K, M ] = [ 27, 32, 70, 75, 77, LEFT_A, UP_A, RIGHT_A, DOWN_A ];
 const API_KEY = 'AIzaSyD0HiZ1FdFt3QK10ndUBUfddC6hyj19IW8';
 const YOUTUBE_API_URL ='https://www.googleapis.com/youtube/v3/search';
-const DEFAULT_QUERY_STRING = `part=snippet&key=${API_KEY}&maxResults=36`;
+const DEFAULT_QUERY_STRING = `part=snippet&key=${API_KEY}&maxResults=50`;
 const LOCATION_CHANGE_SEC = 10;
 const VOLUME_CHANGE_PCENT = 5;
 const GA_ACTIVE_TEXT = 'מופעלת';
@@ -29,6 +28,7 @@ const arrowKeys = {
 
 const navCharCodeToKey = {
 	'13': 'enter',
+	'32': 'spacebar',
 	'33': 'pageUp',
 	'34': 'pageDown',
 	'36': 'home',
@@ -70,7 +70,7 @@ $(function() {
 		getChunk(n) {
 			return this.chunks[n];
 		},
-		resultsToEuqalLengthChunks(vids, chunkLength) {
+		resultsToChunks(vids, chunkLength) {
 			let chunks = [];
 
 			for (let i = 0; i < vids.length; i += chunkLength) {
@@ -78,16 +78,14 @@ $(function() {
 				let endIdx = i + chunkLength;
 				let chunk = vids.slice(startIdx, endIdx);
 
-				if (chunk.length === chunkLength) {
-					chunks.push(chunk);
-				}
+				chunks.push(chunk);
 			}
 
 			return chunks;
 		},
 		assignChunks(vidsPerChunk) {
 			this.vidsPerChunk = vidsPerChunk;
-			this.chunks = this.resultsToEuqalLengthChunks(this.allResults, vidsPerChunk);
+			this.chunks = this.resultsToChunks(this.allResults, vidsPerChunk);
 			this.chunkNumber = this.chunks.length;
 		}
 	};
@@ -200,8 +198,8 @@ $(function() {
 
 	const Page = (function() {
 		Handlebars.registerHelper('shortenTitle', (title) => {
-			if (title.length > 60) {
-				let newTitle = title.substring(0, 57);
+			if (title.length > 80) {
+				let newTitle = title.substring(0, 77);
 
 				return `${newTitle.replace(/ $/, '')}...`;
 			}
@@ -209,10 +207,10 @@ $(function() {
 			return title;
 		});
 
-		Handlebars.registerHelper('notHebrew', (title) => {
+		Handlebars.registerHelper('isHebrew', (title) => {
 			let charCode = title.charCodeAt(0);
 
-			return charCode < 1488 || charCode > 1514;
+			return charCode > 1488 && charCode < 1514;
 		});
 
 		let playTimeout;
@@ -240,7 +238,7 @@ $(function() {
 				'5': '0.6rem',
 				'4': '0.8rem',
 				'3': '0.8rem',
-				'2': '1.2rem',
+				'2': '1rem',
 				'1': '1.4rem',
 			}[rowNum];
 		}
@@ -340,7 +338,7 @@ $(function() {
 			userSettings: null,
 			thumbTemplate: null,
 			pageNavTemplate: null,
-			gaBreak: false,
+			onGaBreak: false,
 
 			init() {
 				this.getTemplates();
@@ -376,13 +374,10 @@ $(function() {
 			initSettings() {
 				const that = this;
 
-				return this.getUserSettings().then(function(response) {
-					if (response) {
-						that.userSettings = settingsJsonToObj(response);
-					} else {
-						that.userSettings = DEFAULT_SETTINGS;
-					}
-				});
+				return this.getUserSettings()
+									 .then(function(response) {
+											that.userSettings = settingsJsonToObj(response);
+										});
 			},
 			initResults() {
 				let that = this;
@@ -392,14 +387,14 @@ $(function() {
 					let vids = data.items;
 
 					that.results = Object.create(Results).init(vids, vidsPerChunk);
-				})
-
-				.fail(function() {
-					let vidsPerChunk = that.vidsPerChunk();
-					let vids = tmpData.items;
-
-					that.results = Object.create(Results).init(vids, vidsPerChunk);
 				});
+
+				// .fail(function() {
+				// 	let vidsPerChunk = that.vidsPerChunk();
+				// 	let vids = tmpData.items;
+
+				// 	that.results = Object.create(Results).init(vids, vidsPerChunk);
+				// });
 			},
 			initDisplay() {
 				feather.replace();
@@ -412,7 +407,6 @@ $(function() {
 			},
 			getResults() {
 				const queryString = makeQueryString(this.query);
-
 				return this.ajaxCall(YOUTUBE_API_URL, queryString);
 			},
 			getUserSettings() {
@@ -427,13 +421,17 @@ $(function() {
 				this.results.assignChunks(this.vidsPerChunk());
 			},
 			setCSSProperties() {
+				document.body.style.setProperty('--figuresPerRow', this.colNumber());
+				document.body.style.setProperty('--figuresPerCol', this.rowNumber());
 				$body.css({
 					overflow: 'hidden',
 					'--figureWidth': getFigureWidth(this.colNumber()),
 					'--figureHeight': getFigureHieght(this.rowNumber()),
 					'--figFontSize': getFontSize(this.rowNumber()),
 					'--animationLength': getAnimationLength(this.gaClickTime()),
-					'--BGColor': getBackgroundColor(this.backgroundColor()),
+					'--BGColor': this.backgroundColor(),
+					'--selectColor': this.chooserColor(),
+					'--circleColor': `${this.chooserColor()}bf`,
 				});
 			},
 			initHeader() {
@@ -446,28 +444,40 @@ $(function() {
 				let vids = this.results.getChunk(n);
 				let html = this.thumbTemplate({ vids }).replace('-->', '');
 
-				$contentDiv.children().remove();
+				$contentDiv.empty();
 				$contentDiv.append(html);
+
+				let rightMarginPcent = this.colNumber() === 1 ? '5%' : '2.5%';
+				$(`.wrapper:nth-of-type(${this.colNumber()}n)`).css('margin-left', '0');
+				$(`.wrapper:nth-of-type(${this.colNumber()}n + 1)`).css('margin-right', rightMarginPcent);
 
 				this.chunkN = n;
 			},
 			selectWrapper(idx) {
 				$('.selected').removeClass('selected');
-				this.wrappers(idx).addClass('selected');
+				let $wrapper = this.wrappers(idx);
+
+				if (empty($wrapper)) {
+					$wrapper = this.wrappers(0);
+				}
+
+				$wrapper.addClass('selected');
 			},
 			showNextChunk() {
-				let nextChunk = (this.chunkN + 1) % this.results.chunkNumber;
+				let nextChunk = (this.chunkN + 1);
 
 				this.showChunk(nextChunk);
 			},
 			showPrevChunk() {
 				let prevChunk = this.chunkN - 1;
 
-				if (prevChunk < 0) {
-					prevChunk = this.results.chunkNumber - 1;
-				}
-
 				this.showChunk(prevChunk);
+			},
+			lastChunk(chunk) {
+				return chunk === this.results.chunkNumber - 1;
+			},
+			firstChunk(chunk) {
+				return chunk === 0;
 			},
 			navigateFrom(idx, direction) {
 				let change = directionToChange[direction].call(this);
@@ -475,9 +485,13 @@ $(function() {
 				let maxAllowedIdx = this.results.vidsPerChunk - 1;
 
 				if (nextIdx > maxAllowedIdx) {
+					if (this.lastChunk(this.chunkN)) return;
+
 					nextIdx = this.nextOutOfBoundsIdx(idx, direction);
 					this.showNextChunk();
 				} if (nextIdx < 0) {
+					if (this.firstChunk(this.chunkN)) return;
+
 					nextIdx = this.nextOutOfBoundsIdx(idx, direction);
 					this.showPrevChunk();
 				}
@@ -509,10 +523,10 @@ $(function() {
 				return idx;
 			},
 			gaDisabled() {
-				return !this.userSettings['gaze_aware'];
+				return this.userSettings['gaze_aware'] === 'off';
 			},
 			onBreak() {
-				return this.gaBreak;
+				return this.onGaBreak;
 			},
 			gaInactive() {
 				return this.gaDisabled() || this.onBreak();
@@ -550,12 +564,15 @@ $(function() {
 			countdownAnimate($elm) {
 				if (activeAnimation($elm)) return;
 
-				// this.setCSSCircleWidth($elm);
+				this.setCSSCircleWidth($elm);
 				this.createProgCricleOn($elm);
 			},
 			setCSSCircleWidth($elm) {
 				let elmHeight = $elm.css('height');
-				let circleWidth = parseInt(elmHeight, 10) / 2;
+				let circleWidth = parseInt(elmHeight, 10) / 2.5;
+
+				circleWidth = circleWidth < 40 ? 40 : circleWidth;
+
 				document.body.style.setProperty('--circleRadius', `${circleWidth}px`);
 			},
 			createProgCricleOn($elm) {
@@ -616,6 +633,9 @@ $(function() {
 					case 'home':
 						$logo.trigger('click');
 						break;
+					case 'spacebar':
+						$gaButtonIndicator.trigger('click');
+						break;
 					default:
 						this.navigateFrom(selectedIdx, key);
 				}
@@ -633,7 +653,7 @@ $(function() {
 
 				$gaButtonIndicator.toggleClass('active', onBreak);
 				$gaTextIndicator.find('span').text(newText);
-				this.gaBreak = !onBreak;
+				this.onGaBreak = !onBreak;
 			},
 			ajaxCall(url, data) {
 				return $.ajax({ url, data }).then((data) => data);
@@ -656,6 +676,9 @@ $(function() {
 			backgroundColor() {
 				return this.userSettings['background_color'];
 			},
+			chooserColor() {
+				return this.userSettings['select_color'];
+			}
 		};
 	})();
 

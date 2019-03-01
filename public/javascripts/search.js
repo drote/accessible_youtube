@@ -1,6 +1,5 @@
 $(() => {
-	$searchBar = $('#search_bar');
-	$searchBar.focus();
-
 	feather.replace()
+	$searchBar = $('[type="text"]');
+	$searchBar.focus();
 });
