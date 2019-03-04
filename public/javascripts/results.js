@@ -12,7 +12,26 @@ const DEFAULT_SETTINGS = {
 
 const API_KEY = 'AIzaSyD0HiZ1FdFt3QK10ndUBUfddC6hyj19IW8';
 const YOUTUBE_API_URL ='https://www.googleapis.com/youtube/v3/search';
-const DEFAULT_QUERY_STRING = `part=snippet&key=${API_KEY}&maxResults=50`;
+
+let REQUEST_PARAMS = {
+	key: API_KEY,
+	part: 'snippet',
+	maxResults: '50',
+	fields: 'items(id(videoId),snippet(title,thumbnails(high)))',
+	type: 'video',
+};
+
+const makeQueryString = (query) => {
+	let params = [];
+	REQUEST_PARAMS['q'] = query;
+
+	Object.keys(REQUEST_PARAMS).forEach((prm) => {
+		params.push(`${prm}=${REQUEST_PARAMS[prm]}`);
+	});
+
+	return encodeURI(`${params.join('&')}`);
+}
+
 const LOCATION_CHANGE_SEC = 10;
 const VOLUME_CHANGE_PCENT = 5;
 const GA_ACTIVE_TEXT = 'מופעלת';
@@ -52,12 +71,12 @@ $(function() {
 	const $playerModal = $('#player_modal_layer');
 	const $playerContainer = $('#player_container');
 	const $seperator = $('#seperator');
-	const $gaButtonIndicator = $('#ga_button');
-	const $gaTextIndicator = $('#ga_text');
+	// const $gaButtonIndicator = $('#ga_button');
+	// const $gaTextIndicator = $('#ga_text');
 	const $querySpan = $('#query');
 	const $logo = $('#logo');
 
-	const GA_INDICATORS = [$gaButtonIndicator, $gaTextIndicator];
+	// const GA_INDICATORS = [$gaButtonIndicator, $gaTextIndicator];
 	const PLAYER_DIVS = [$playerContainer, $playerModal, $seperator];
 
 	const Results = {
@@ -226,7 +245,6 @@ $(function() {
 			pageUp() { return -this.vidsPerChunk(); },
 		}
 
-		const makeQueryString = (query) => `${DEFAULT_QUERY_STRING}&q=${query}`;
 		const empty = ($elm) => $elm.length === 0;
 		const activeAnimation = ($elm) => $elm.find('.progress_circle').length !== 0;
 		const getFigureHieght = (rowNum) => `${90 / rowNum}%`;
@@ -263,9 +281,9 @@ $(function() {
 			PLAYER_DIVS.forEach(($div) => $div.toggle());
 		}
 
-		const toggleGaIndicators = (state) => {
-			GA_INDICATORS.forEach(($ind) => $ind.toggle(state));
-		}
+		// const toggleGaIndicators = (state) => {
+		// 	GA_INDICATORS.forEach(($ind) => $ind.toggle(state));
+		// }
 
 		const navModeKeyEvent = function(key) {
 			key = navCharCodeToKey[key];
@@ -295,7 +313,7 @@ $(function() {
 		}
 
 		const vidMouseIn = function(e) {
-			if (this.gaInactive()) return;
+			if (this.gaDisabled()) return;
 
 			let $wrapper = $(e.target);
 
@@ -308,7 +326,7 @@ $(function() {
 		}
 
 		const vidMouseOut = function() {
-			if (this.gaInactive()) return;
+			if (this.gaDisabled()) return;
 
 			this.cancelGazeSelect();
 			this.cancelGazePlay();
@@ -320,17 +338,17 @@ $(function() {
 			this.startVideo($wrapper);
 		}
 
-		const gaButtonMouseIn = function() {
-			this.gazeGeneric($gaButtonIndicator);
-		}
+		// const gaButtonMouseIn = function() {
+		// 	this.gazeGeneric($gaButtonIndicator);
+		// }
 
-		const gaButtonMouseOut = function() {
-			this.cancelGazeGeneric($gaButtonIndicator);
-		}
+		// const gaButtonMouseOut = function() {
+		// 	this.cancelGazeGeneric($gaButtonIndicator);
+		// }
 
-		const gaButtonClick = function() {
-			this.toggleGABreak(this.onBreak());
-		}
+		// const gaButtonClick = function() {
+		// 	this.toggleGABreak(this.onBreak());
+		// }
 
 		return {
 			results: null,
@@ -338,7 +356,7 @@ $(function() {
 			userSettings: null,
 			thumbTemplate: null,
 			pageNavTemplate: null,
-			onGaBreak: false,
+			// onGaBreak: false,
 
 			init() {
 				this.getTemplates();
@@ -361,9 +379,9 @@ $(function() {
 				$contentDiv.on('mouseenter', '.wrapper', vidMouseIn.bind(this));
 				$contentDiv.on('mouseleave', '.wrapper', vidMouseOut.bind(this));
 				$contentDiv.on('click', '.wrapper', vidClick.bind(this));
-				$gaButtonIndicator.on('mouseenter', gaButtonMouseIn.bind(this));
-				$gaButtonIndicator.on('mouseleave', gaButtonMouseOut.bind(this));
-				$gaButtonIndicator.on('click', gaButtonClick.bind(this));
+				// $gaButtonIndicator.on('mouseenter', gaButtonMouseIn.bind(this));
+				// $gaButtonIndicator.on('mouseleave', gaButtonMouseOut.bind(this));
+				// $gaButtonIndicator.on('click', gaButtonClick.bind(this));
 			},
 			getQuery() {
 				const urlParams = new URLSearchParams(window.location.search);
@@ -435,10 +453,10 @@ $(function() {
 				});
 			},
 			initHeader() {
-				let gaOn = !this.gaDisabled();
+				// let gaOn = !this.gaDisabled();
 
 				$querySpan.text(this.query);
-				toggleGaIndicators(gaOn);
+				// toggleGaIndicators(gaOn);
 			},
 			showChunk(n) {
 				let vids = this.results.getChunk(n);
@@ -525,12 +543,12 @@ $(function() {
 			gaDisabled() {
 				return this.userSettings['gaze_aware'] === 'off';
 			},
-			onBreak() {
-				return this.onGaBreak;
-			},
-			gaInactive() {
-				return this.gaDisabled() || this.onBreak();
-			},
+			// onBreak() {
+			// 	return this.onGaBreak;
+			// },
+			// gaInactive() {
+			// 	return this.gaDisabled();
+			// },
 			startVideo($wrapper) {
 				let vidId = $wrapper.find('figure').data('vid_id');
 
@@ -648,13 +666,13 @@ $(function() {
 
 				this.playerManager.keyHandler(key);
 			},
-			toggleGABreak(onBreak) {
-				let newText = onBreak ? GA_ACTIVE_TEXT : GA_INACTIVE_TEXT;
+			// toggleGABreak(onBreak) {
+			// 	let newText = onBreak ? GA_ACTIVE_TEXT : GA_INACTIVE_TEXT;
 
-				$gaButtonIndicator.toggleClass('active', onBreak);
-				$gaTextIndicator.find('span').text(newText);
-				this.onGaBreak = !onBreak;
-			},
+			// 	$gaButtonIndicator.toggleClass('active', onBreak);
+			// 	$gaTextIndicator.find('span').text(newText);
+			// 	this.onGaBreak = !onBreak;
+			// },
 			ajaxCall(url, data) {
 				return $.ajax({ url, data }).then((data) => data);
 			},
