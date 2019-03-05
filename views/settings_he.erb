@@ -26,7 +26,7 @@
           <label for="select_delay">
            המתנה לפני תחילת השהייה:
           </label>
-          <span class="slider_value" id="select">
+          <span class="slider_value" id="select_delay_span">
             1
           </span>
         </dt>
@@ -39,7 +39,7 @@
           <label for="click_delay">
             השהייה לבחירה:
           </label>
-          <span class="slider_value" id="click">
+          <span class="slider_value" id="click_delay_span">
             1
           </span>
         </dt>
@@ -83,6 +83,36 @@
         <dt>צבע הדגשה</dt>
         <dd>
           <input name="select_color" type="color" value="#b22222">
+        </dd>
+      </dl>
+
+      <dl>
+        <dt>מיקום סרגל כלים</dt>
+        <dd>
+          <label>
+            <input type="radio" name="controls_location" value="right" checked>
+            ימין
+          </label>
+          <label>
+            <input type="radio" name="controls_location" value="left" >
+            שמאל
+          </label>
+        </dd>
+      </dl>
+
+      <dl>
+        <dt>
+          <label for="controls_width">
+          רוחב סרגל כלים (באחוזים)
+          </label>
+          <span class="slider_value" id="controls_width_span">
+            1
+          </span>
+        </dt>
+
+        <dd>
+          <input type="range" name="controls_width"
+                   id="controls_width" value="10" min="1" max="100">
         </dd>
       </dl>
       <input type="submit" value="שמור">

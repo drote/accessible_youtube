@@ -5,12 +5,14 @@ require 'sinatra/content_for'
 
 DEFAULT_SETTINGS = {
   gaze_aware: 'on',
-  click_delay: '10',
-  select_delay: '10',
+  click_delay: '5',
+  select_delay: '15',
   col_number: '4',
-  row_number: '2',
-  background_color: '#fafafa',
-  select_color: '#b22222',
+  row_number: '3',
+  background_color: '#c4c4c4',
+  select_color: '#e89999',
+  controls_location: 'right',
+  controls_width: '10',
 }
 
 YEAR_FROM_NOW = Time.now + (3600 * 24 * 365)

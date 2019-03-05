@@ -9,6 +9,7 @@ body {
 	--headerHeight: 12vh;
 	--highlightColor: #3d4f30;
 	--mainLightColor: #fafafa;
+	--mainAndHeaderWidth: 100%;
 	background-color: #fbfff9;
 	margin: 0;
 }
@@ -22,7 +23,7 @@ header {
 	--itemMargin: 35px;
 	position: absolute;
 	top: 0;
-	width: 100%;
+	width: var(--mainAndHeaderWidth);
 }
 
 h1 {
@@ -142,16 +143,16 @@ button.search:hover {
 /* MAIN PAGE */
 
 main {
+	font-size: 0;
 	height: 90%;
 	position: absolute;
 	transform: translateY(var(--headerHeight));
-	width: 100%;
+	width: var(--mainAndHeaderWidth);
 }
 
 main > p {
 	margin: 25px 40%;
 }
-
 
 #content {
 	background-color: var(--BGColor);
@@ -241,6 +242,14 @@ figcaption {
     animation-timing-function: linear;
 }
 
+#controls {
+	background-color: #000;
+	float: var(--controlsFloat);
+	height: 100vh;
+	font-size: 0;
+	width: var(--controlsWidth);
+}
+
 /* YOUTUBE PLAYER */
 
 #player_container {
@@ -248,7 +257,7 @@ figcaption {
 	height: 100vh;
 	left: 0;
 	position: fixed;
-	top: calc(-1 * var(--headerHeight));
+	top: 0;
 	width: 100%;
 	z-index: 3;
 }
@@ -259,7 +268,7 @@ figcaption {
 	height: 100vh;
 	left: 0;
 	position: fixed;
-	top: calc(-1 * var(--headerHeight));
+	top: 0;
 	width: 100%;
 	z-index: 4;
 }
@@ -272,6 +281,7 @@ iframe {
 /* SETTINGS FORM */
 
 fieldset {
+	font-size: 1rem;
 	font-weight: 600;
 	margin: 0 auto;
 	padding-bottom: 45px;

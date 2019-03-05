@@ -51,6 +51,8 @@ const navCharCodeToKey = {
 	'33': 'pageUp',
 	'34': 'pageDown',
 	'36': 'home',
+	'71': 'g',
+	'79': 'o',
 	...arrowKeys,
 };
 
@@ -251,6 +253,9 @@ $(function() {
 		const getFigureWidth = (colNum) => `${90 / colNum}%`;
 		const getBackgroundColor = (color) => color;
 		const getAnimationLength = (delayTime) => `${delayTime / 1000}s`;
+		const getMainHeaderWidth = (controlsWidth) => `${100 - controlsWidth}%`;
+		const getCotrolsWidth = (controlsWidth) => `${controlsWidth}%`;
+		const getControlsFloat = (float) => float;
 		const getFontSize = (rowNum) => {
 			return {
 				'5': '0.6rem',
@@ -313,7 +318,7 @@ $(function() {
 		}
 
 		const vidMouseIn = function(e) {
-			if (this.gaDisabled()) return;
+			if (this.gaInactive()) return;
 
 			let $wrapper = $(e.target);
 
@@ -326,7 +331,7 @@ $(function() {
 		}
 
 		const vidMouseOut = function() {
-			if (this.gaDisabled()) return;
+			if (this.gaInactive()) return;
 
 			this.cancelGazeSelect();
 			this.cancelGazePlay();
@@ -356,7 +361,7 @@ $(function() {
 			userSettings: null,
 			thumbTemplate: null,
 			pageNavTemplate: null,
-			// onGaBreak: false,
+			gazeBreak: false,
 
 			init() {
 				this.getTemplates();
@@ -450,7 +455,20 @@ $(function() {
 					'--BGColor': this.backgroundColor(),
 					'--selectColor': this.chooserColor(),
 					'--circleColor': `${this.chooserColor()}bf`,
+					'--mainAndHeaderWidth': getMainHeaderWidth(this.controlsWidth()),
+					'--controlsWidth': getCotrolsWidth(this.controlsWidth()),
+					'--controlsFloat': getControlsFloat(this.controlsFloat()),
 				});
+
+				this.pushMainAndHeader(this.controlsFloat());
+			},
+			pushMainAndHeader(controlsFloat) {
+				let $mainAndHeader = $('main, header');
+				if (controlsFloat === 'right') {
+					$mainAndHeader.css('left', 0);
+				} else {
+					$mainAndHeader.css('right', 0);
+				}
 			},
 			initHeader() {
 				// let gaOn = !this.gaDisabled();
@@ -546,9 +564,9 @@ $(function() {
 			// onBreak() {
 			// 	return this.onGaBreak;
 			// },
-			// gaInactive() {
-			// 	return this.gaDisabled();
-			// },
+			gaInactive() {
+			 	return this.gaDisabled() || this.onGazeBreak();
+			},
 			startVideo($wrapper) {
 				let vidId = $wrapper.find('figure').data('vid_id');
 
@@ -654,6 +672,12 @@ $(function() {
 					case 'spacebar':
 						$gaButtonIndicator.trigger('click');
 						break;
+					case 'g':
+						this.startGazeBreak();
+						break;
+					case 'o':
+						this.endGazeBreak();
+						break;
 					default:
 						this.navigateFrom(selectedIdx, key);
 				}
@@ -673,6 +697,19 @@ $(function() {
 			// 	$gaTextIndicator.find('span').text(newText);
 			// 	this.onGaBreak = !onBreak;
 			// },
+			startGazeBreak() {
+				if (this.gaDisabled()) return;
+
+				this.gazeBreak = true;
+			},
+			endGazeBreak() {
+				if (this.gaDisabled()) return;
+
+				this.gazeBreak = false;
+			},
+			onGazeBreak() {
+				return this.gazeBreak;
+			},
 			ajaxCall(url, data) {
 				return $.ajax({ url, data }).then((data) => data);
 			},
@@ -696,7 +733,13 @@ $(function() {
 			},
 			chooserColor() {
 				return this.userSettings['select_color'];
-			}
+			},
+			controlsWidth() {
+				return this.userSettings['controls_width'];
+			},
+			controlsFloat() {
+				return this.userSettings['controls_location'];
+			},
 		};
 	})();
 

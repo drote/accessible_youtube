@@ -18,6 +18,7 @@ $(function() {
 	const $sliderInputs = $('[type="range"]');
 	const $selectSliderInput = $('#select_delay');
 	const $clickSliderInput = $('#click_delay');
+	const $controlsWidthSliderInput = $('#controls_width');
 	const $sliderVals = $('.slider_value');
 	const $clickSliderVal = $('#click_slider_value');
 	const $selectSliderVal = $('#select_slider_value');
@@ -26,6 +27,7 @@ $(function() {
 	const $backgroundInput = $('[name="background_color"]');
 	const $selectColorInput = $('[name="select_color"]');
 	const $resetButton = $('[type="reset"]');
+	const $controlsLocationRadio = $('[name="controls_location"]');
 
 	const Page = (function() {
 		const formToJson = ($form) => {
@@ -118,18 +120,24 @@ $(function() {
 				}
 			},
 			changeSliderNumberValue($slider) {
-				let sliderValId = $slider.attr('name').split('_')[0];
-				let $sliderVal = $(`#${sliderValId}`);
-				let newVal = $slider.val() / 10;
+				let sliderValId = $slider.attr('name');
+				let $sliderVal = $(`#${sliderValId}_span`);
+				let newVal = $slider.val();
+
+				if (sliderValId !== 'controls_width') {
+					newVal /= 10;
+				}
 
 				$sliderVal.text(newVal);
 			},
 			setFormValues({ gaze_aware, select_delay, click_delay, row_number,
-											col_number, background_color, select_color }) {
+											col_number, background_color, select_color,
+											controls_width, controls_location}) {
 				let ga_active = gaze_aware === 'on';
 
-				this.setRadioInput(gaze_aware);
-				this.setSliderValues(select_delay, click_delay);
+				this.setRadioInput($gazeAwareRadio, gaze_aware);
+				this.setRadioInput($controlsLocationRadio, controls_location);
+				this.setSliderValues(select_delay, click_delay, controls_width);
 				this.setRowColValues(row_number, col_number);
 				this.setColorInputs(background_color, select_color);
 				this.toggleSlideBars(ga_active);
@@ -139,19 +147,21 @@ $(function() {
 				$sliderInputs.prop('disabled', !bool);
 				$sliderVals.toggle(bool);
 			},
-			setRadioInput(onOff) {
-				$gazeAwareRadio.each(function() {
+			setRadioInput($radios, radioVal) {
+				$radios.each(function() {
 					$radio = $(this);
-					$radio.prop('checked', $radio.val() === onOff);
+					$radio.prop('checked', $radio.val() === radioVal);
 				});
 			},
 			setRowColValues(rowN, colN) {
 				$rowNumberInput.val(rowN);
 				$colNumberInput.val(colN);
+
 			},
-			setSliderValues(selectDelay, clickDelay) {
+			setSliderValues(selectDelay, clickDelay, controlsWidth) {
 				$selectSliderInput.val(selectDelay);
 				$clickSliderInput.val(clickDelay);
+				$controlsWidthSliderInput.val(controlsWidth);
 			},
 			setSliderNumValues() {
 				let that = this;
