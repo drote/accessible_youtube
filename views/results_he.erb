@@ -1,5 +1,5 @@
 <% content_for :header_content_center do %>
-  <p>תוצאות עבור: <span id="query"></span></p>
+  <p>תוצאות עבור:</p><span id="query"></span>
 <% end %>
 
 <main>
@@ -15,25 +15,30 @@
 
 <div id="controls"></div>
 
-<script type="text/handlebars=x" id="vid_thumb_partial" type="partial">
+<script type="text/handlebars-x" id="vid_thumb_partial" type="partial">
 <div class="wrapper">
     <figure
-    data-vid_id={{id.videoId}}>
-      <img src="{{snippet.thumbnails.high.url}}">
+    data-vid_id={{id}}>
+      <img src="{{img}}" alt="{{description}}">
       <figcaption
-        {{#if (isHebrew snippet.title)}}
+        {{#if (isHebrew title)}}
           style="direction: rtl"
         {{/if}}>
-        {{{shortenTitle snippet.title}}}
+        {{{shortenTitle title}}}
       </figcaption>
     </figure>
   </div>
 </script>
 
-<script type="text/handlebars=x" id="thumbnails_template">
+<script type="text/handlebars-x" id="thumbnails_template">
   {{#each vids}}
     {{> vid_thumb_partial}}
   {{/each}}
+</script>
+
+<script type="text/handlebars-x" id="playlist_header_template">
+  <img src="{{snippet.thumbnails.medium.url}}" alt="{{snippet.description}}">
+  <p>{{snippet.title}}</p>
 </script>
 
 <script type="text/javascript" src="javascripts/temp_data.js"></script>

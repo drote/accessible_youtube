@@ -8,5 +8,5 @@ gem 'pg'
 ruby '2.4.1'
 
 group :production do
-  gem 'puma'
+  gem 'passenger', '>= 5.0.11'
 end

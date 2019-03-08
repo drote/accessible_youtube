@@ -45,27 +45,32 @@ header p {
 .header_content.center {
 	justify-content: space-between;
 	padding-right: 50px;
-	width: 30%;
+	width: 40%;
 }
 
 .header_content.left {
 	justify-content: flex-end;
-	width: 20%;
+	width: 10%;
 }
 
-a.settings {
+.header_content > img {
+	z-index: 1;
+}
+
+.header_content a {
 	padding: 2px;
 	color: var(--highlightColor);
-	margin-right: 25px;
+	margin-right: 10px;
 }
 
-a.settings:hover {
+.header_content a:hover {
 	color: #d36767;
 }
 
 #query {
-	font-size: 0.8rem;
-	font-weight: bold;
+  font-size: 1.5rem;
+  font-weight: bold;
+  text-transform: capitalize;
 }
 
 #ga_button {

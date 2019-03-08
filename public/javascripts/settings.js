@@ -66,6 +66,7 @@ $(function() {
 			init() {
 				this.bindEvents();
 				this.initForm();
+				feather.replace();
 			},
 			bindEvents() {
 				$form.on('submit', formSubmitHandler.bind(this));

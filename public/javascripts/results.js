@@ -1,117 +1,160 @@
 'use strict';
 
-const DEFAULT_SETTINGS = {
-	gaze_aware: 'on',
-	click_delay: 10,
-	select_delay: 10,
-	col_number: 4,
-	row_number: 2,
-	background_color: 'white',
-	select_color: '#b22222',
-}
-
-const API_KEY = 'AIzaSyD0HiZ1FdFt3QK10ndUBUfddC6hyj19IW8';
-const YOUTUBE_API_URL ='https://www.googleapis.com/youtube/v3/search';
-
-let REQUEST_PARAMS = {
-	key: API_KEY,
-	part: 'snippet',
-	maxResults: '50',
-	fields: 'items(id(videoId),snippet(title,thumbnails(high)))',
-	type: 'video',
-};
-
-const makeQueryString = (query) => {
-	let params = [];
-	REQUEST_PARAMS['q'] = query;
-
-	Object.keys(REQUEST_PARAMS).forEach((prm) => {
-		params.push(`${prm}=${REQUEST_PARAMS[prm]}`);
-	});
-
-	return encodeURI(`${params.join('&')}`);
-}
-
-const LOCATION_CHANGE_SEC = 10;
-const VOLUME_CHANGE_PCENT = 5;
-const GA_ACTIVE_TEXT = 'מופעלת';
-const GA_INACTIVE_TEXT = 'מופסקת';
-
-const SETTINGS_URL = 'user_settings';
-const arrowKeys = {
-	'37': 'left',
-	'38': 'up',
-	'39': 'right',
-	'40': 'down',
-}
-
-const navCharCodeToKey = {
-	'13': 'enter',
-	'32': 'spacebar',
-	'33': 'pageUp',
-	'34': 'pageDown',
-	'36': 'home',
-	'71': 'g',
-	'79': 'o',
-	...arrowKeys,
-};
-
-const playCharCodeToKey = {
-	'27': 'escape',
-	'32': 'spacebar',
-	'70': 'f',
-	'75': 'k',
-	'77': 'm',
-	...arrowKeys,
-};
-
-let page;
-
 $(function() {
+	// JQUERY VARIABLES
 	const $body = $(document.body);
 	const $contentDiv = $('#content');
 	const $playerModal = $('#player_modal_layer');
 	const $playerContainer = $('#player_container');
 	const $seperator = $('#seperator');
-	// const $gaButtonIndicator = $('#ga_button');
-	// const $gaTextIndicator = $('#ga_text');
 	const $querySpan = $('#query');
 	const $logo = $('#logo');
-
-	// const GA_INDICATORS = [$gaButtonIndicator, $gaTextIndicator];
 	const PLAYER_DIVS = [$playerContainer, $playerModal, $seperator];
 
-	const Results = {
-		init(vids, vidsPerChunk) {
-			this.allResults = vids;
-			this.assignChunks(vidsPerChunk);
 
-			return this;
-		},
-		getChunk(n) {
-			return this.chunks[n];
-		},
-		resultsToChunks(vids, chunkLength) {
-			let chunks = [];
+	const ajaxCall = function(url, data) {
+		return $.ajax({ url, data }).then((data) => data);
+	}
 
-			for (let i = 0; i < vids.length; i += chunkLength) {
-				let startIdx = i;
-				let endIdx = i + chunkLength;
-				let chunk = vids.slice(startIdx, endIdx);
+	// RESULTS MANAGER
+	const ResultsManager = (function() {
+		const YT_SEARCH_URL = '/search';
+		const YT_PLAYLIST_URL= '/playlistItems';
+		const YT_API_KEY = 'AIzaSyD0HiZ1FdFt3QK10ndUBUfddC6hyj19IW8';
+		const YT_SEARCH_FIELDS = 'nextPageToken,items(id(videoId),snippet(title,description,thumbnails(high)))';
+		const YT_PLAYLIST_FIELDS = 'nextPageToken,items(snippet(resourceId(videoId),title,description,thumbnails(high(url))))';
+		const MAX_ALLOWED_VIDEOS = 100;
 
-				chunks.push(chunk);
+		const makeQueryString = (requestParams) => {
+			let params = [];
+
+			Object.keys(requestParams).forEach((prm) => {
+				params.push(`${prm}=${requestParams[prm]}`);
+			});
+
+			return encodeURI(`${params.join('&')}`);
+		}
+
+		const parseForTemplate = (vid) => {
+			let obj = {};
+			let vidId;
+
+			if (vid.id) {
+				vidId = vid.id.videoId;
+			} else {
+				vidId = vid.snippet.resourceId.videoId;
 			}
 
-			return chunks;
-		},
-		assignChunks(vidsPerChunk) {
-			this.vidsPerChunk = vidsPerChunk;
-			this.chunks = this.resultsToChunks(this.allResults, vidsPerChunk);
-			this.chunkNumber = this.chunks.length;
-		}
-	};
+			obj['id'] = vidId;
+			obj['img'] = vid.snippet.thumbnails.high.url;
+			obj['title'] = vid.snippet.title;
+			obj['description'] = vid.snippet.description;
 
+			return obj;
+		}
+
+		return {
+			allResults: [],
+			urlRoot: 'https://www.googleapis.com/youtube/v3',
+			url: null,
+			nextPageToken: null,
+
+			requestParams: {
+				key: YT_API_KEY,
+				part: 'snippet',
+				maxResults: null,
+				fields: null,
+				type: null,
+				order: 'viewCount',
+			},
+
+			init(query, queryType, vidsPerPage) {
+				this.initRequestParams(query, queryType, vidsPerPage);
+				this.initUrl(queryType);
+
+				return this;
+			},
+			initRequestParams(query, queryType, vidsPerPage) {
+				if (queryType === 'searchQuery') {
+					this.requestParams['q'] = query;
+					this.requestParams.fields = YT_SEARCH_FIELDS;
+				} else {
+					this.requestParams['playlistId'] = query;
+					this.requestParams['fields'] = YT_PLAYLIST_FIELDS;
+				}
+
+				this.requestParams.type = 'video';
+				this.requestParams.maxResults = vidsPerPage;
+			},
+			initUrl(queryType) {
+				let address = YT_SEARCH_URL;
+
+				if (queryType === 'playlistVideos') {
+					address = YT_PLAYLIST_URL;
+				}
+
+				this.url = this.urlRoot + address;
+			},
+			getResults(more) {
+				let that = this;
+
+				if (more) {
+					this.requestParams['pageToken'] = this.nextPageToken;
+				}
+
+				let queryString = makeQueryString(this.requestParams);
+
+				return this.fetch(queryString)
+									 .then(function(response) {
+									 	 that.addResults(response.items, response.nextPageToken);
+									 });
+			},
+			getPlaylistInfo(id) {
+				let plInfoRequestParams = {
+					id,
+					key: YT_API_KEY,
+					part: 'snippet',
+					maxResults: '1',
+					fields: 'items(snippet(title,description,thumbnails(medium(url))))',
+				};
+
+				let url = this.urlRoot + '/playlists';
+				let queryString = makeQueryString(plInfoRequestParams);
+
+				return ajaxCall(url, queryString);
+			},
+			fetch(queryString) {
+				return ajaxCall(this.url, queryString);
+			},
+			addResults(vids, nextPageToken) {
+				this.allResults.push(vids.map(parseForTemplate));
+				this.nextPageToken = nextPageToken;
+			},
+			getResultPage(n) {
+				return this.allResults[n];
+			},
+			nOfPages() {
+				return this.allResults.length;
+			},
+			nOfResults() {
+				return this.allResults.map((page) => page.length)
+									 .reduce((sum, current) => sum + current);
+			},
+			noMoreResults() {
+				return !this.nextPageToken;
+			},
+			outOfQuota() {
+				return this.nOfResults() >= MAX_ALLOWED_VIDEOS;
+			}
+		};
+	})();
+
+
+	//PLAYER MANAGER
 	const PlayerManager = (function() {
+		const LOCATION_CHANGE_SEC = 10;
+		const VOLUME_CHANGE_PCENT = 5;
+
 		const keyToAction = {
 			f() { this.toggleFullScreen(); },
 			k() { this.togglePlay(); },
@@ -217,7 +260,118 @@ $(function() {
 		}
 	})();
 
+
+	//NAVIGATION MANAGER
+	const NavigationManager = (function() {
+		const directionToChange = {
+			left() {
+				return 1;
+			},
+			right() {
+				return -1;
+			},
+			up() {
+				return -this.colNumber;
+			},
+			down() {
+				return this.colNumber;
+			},
+			pageDown() {
+				return this.vidsPerPage;
+			},
+			pageUp() {
+				return -this.vidsPerPage;
+			},
+		}
+
+		return {
+			init(colNumber, rowNumber) {
+				this.colNumber = parseInt(colNumber, 10);
+				this.rowNumber = parseInt(rowNumber, 10);
+				this.vidsPerPage = this.colNumber * this.rowNumber;
+
+				return this;
+			},
+			nextIdxAndPage(idx, direction) {
+				let change = directionToChange[direction].call(this);
+				let nextIdx = idx + change;
+				let maxAllowedIdx = this.vidsPerPage - 1;
+				let page = 'current';
+
+				if (nextIdx > maxAllowedIdx) {
+					nextIdx = this.nextOutOfBoundsIdx(idx, direction);
+					page = 'next';
+				} if (nextIdx < 0) {
+					nextIdx = this.nextOutOfBoundsIdx(idx, direction);
+					page = 'prev';
+				}
+
+				return { nextIdx, page };
+			},
+			nextOutOfBoundsIdx(idx, direction) {
+				switch (direction) {
+					case 'up':
+					case 'down':
+						idx = this.idxAcrossPage(idx, direction);
+						break;
+					case 'left':
+						idx = 0;
+						break;
+					case 'right':
+						idx = -1;
+				}
+
+				return idx;
+			},
+			idxAcrossPage(idx, direction) {
+				let compensation = ((this.rowNumber - 1) * this.colNumber);
+
+				if (direction === 'down') {
+					compensation = -compensation;
+				}
+
+				return idx + compensation;
+			},
+		};
+	})();
+
+
+	//PAGE OBJECT
 	const Page = (function() {
+		const SETTINGS_URL = 'user_settings';
+
+		const arrowKeys = {
+			'37': 'left',
+			'38': 'up',
+			'39': 'right',
+			'40': 'down',
+		}
+
+		const navCharCodeToKey = {
+			'13': 'enter',
+			'32': 'spacebar',
+			'33': 'pageUp',
+			'34': 'pageDown',
+			'36': 'home',
+			'71': 'g',
+			'79': 'o',
+			...arrowKeys,
+		};
+
+		const playCharCodeToKey = {
+			'27': 'escape',
+			'32': 'spacebar',
+			'70': 'f',
+			'75': 'k',
+			'77': 'm',
+			...arrowKeys,
+		};
+
+		let playTimeout;
+		let selectTimeout;
+		let clickTimeout;
+
+
 		Handlebars.registerHelper('shortenTitle', (title) => {
 			if (title.length > 80) {
 				let newTitle = title.substring(0, 77);
@@ -234,17 +388,13 @@ $(function() {
 			return charCode > 1488 && charCode < 1514;
 		});
 
-		let playTimeout;
-		let selectTimeout;
-		let clickTimeout;
-
 		const directionToChange = {
 			left() { return 1; },
 			right() { return -1; },
 			up() { return -this.colNumber(); },
 			down() { return this.colNumber(); },
-			pageDown() { return this.vidsPerChunk(); },
-			pageUp() { return -this.vidsPerChunk(); },
+			pageDown() { return this.vidsPerPage(); },
+			pageUp() { return -this.vidsPerPage(); },
 		}
 
 		const empty = ($elm) => $elm.length === 0;
@@ -285,10 +435,6 @@ $(function() {
 		const togglePlayerDivs = () => {
 			PLAYER_DIVS.forEach(($div) => $div.toggle());
 		}
-
-		// const toggleGaIndicators = (state) => {
-		// 	GA_INDICATORS.forEach(($ind) => $ind.toggle(state));
-		// }
 
 		const navModeKeyEvent = function(key) {
 			key = navCharCodeToKey[key];
@@ -343,56 +489,55 @@ $(function() {
 			this.startVideo($wrapper);
 		}
 
-		// const gaButtonMouseIn = function() {
-		// 	this.gazeGeneric($gaButtonIndicator);
-		// }
-
-		// const gaButtonMouseOut = function() {
-		// 	this.cancelGazeGeneric($gaButtonIndicator);
-		// }
-
-		// const gaButtonClick = function() {
-		// 	this.toggleGABreak(this.onBreak());
-		// }
-
 		return {
-			results: null,
+			params: null,
+			queryType: null,
+			resultsManager: null,
 			playerManager: null,
+			navigationManager: null,
 			userSettings: null,
 			thumbTemplate: null,
-			pageNavTemplate: null,
 			gazeBreak: false,
 
 			init() {
 				this.getTemplates();
 				this.bindEvents();
-				this.getQuery();
+				this.getParams();
 				this.initSettings()
+						// .then(() => this.initRequestParams())
 						.then(() => this.initResults())
-						.then(() => this.initDisplay());
+						.then(() => {
+							this.initDisplay();
+							this.initNavigationManager();
+						});
 
 				return this;
 			},
 			getTemplates() {
 				Handlebars.registerPartial('vid_thumb_partial', $('#vid_thumb_partial').html());
 				this.thumbTemplate = Handlebars.compile($('#thumbnails_template').html());
+				this.playlistHeaderTemplate = Handlebars.compile($('#playlist_header_template').html());
 
-				$('[type="text/handlebars=x"]').remove();
+				$('[type="text/handlebars-x"]').remove();
 			},
 			bindEvents() {
 				$body.on('keydown', keydownHandler.bind(this));
 				$contentDiv.on('mouseenter', '.wrapper', vidMouseIn.bind(this));
 				$contentDiv.on('mouseleave', '.wrapper', vidMouseOut.bind(this));
 				$contentDiv.on('click', '.wrapper', vidClick.bind(this));
-				// $gaButtonIndicator.on('mouseenter', gaButtonMouseIn.bind(this));
-				// $gaButtonIndicator.on('mouseleave', gaButtonMouseOut.bind(this));
-				// $gaButtonIndicator.on('click', gaButtonClick.bind(this));
 			},
-			getQuery() {
+			getParams() {
 				const urlParams = new URLSearchParams(window.location.search);
-				const searchQuery = urlParams.get('q');
 
-				this.query = searchQuery;
+				for (let pair of urlParams.entries()) {
+					this.params = pair;
+				}
+
+				if (this.params[0] === 'q') {
+					this.queryType = 'searchQuery';
+				} else {
+					this.queryType = 'playlistVideos';
+				}
 			},
 			initSettings() {
 				const that = this;
@@ -403,45 +548,26 @@ $(function() {
 										});
 			},
 			initResults() {
-				let that = this;
-
-				return this.getResults().done(function(data) {
-					let vidsPerChunk = that.vidsPerChunk();
-					let vids = data.items;
-
-					that.results = Object.create(Results).init(vids, vidsPerChunk);
-				});
-
-				// .fail(function() {
-				// 	let vidsPerChunk = that.vidsPerChunk();
-				// 	let vids = tmpData.items;
-
-				// 	that.results = Object.create(Results).init(vids, vidsPerChunk);
-				// });
+				this.resultsManager = Object.create(ResultsManager).init(this.params[1], this.queryType, this.vidsPerPage());
+				return this.resultsManager.getResults();s
 			},
 			initDisplay() {
 				feather.replace();
 
-				this.chunkN = 0;
+				this.currentPageNumber = 0;
 				this.setCSSProperties();
 				this.initHeader();
-				this.showChunk(0);
+				this.renderPageNumber(0);
 				this.selectWrapper(0);
 			},
-			getResults() {
-				const queryString = makeQueryString(this.query);
-				return this.ajaxCall(YOUTUBE_API_URL, queryString);
+			initNavigationManager() {
+				this.navigationManager = Object.create(NavigationManager).init(this.colNumber(), this.rowNumber());
 			},
 			getUserSettings() {
-				return this.ajaxCall(SETTINGS_URL);
+				return ajaxCall(SETTINGS_URL);
 			},
-			refreshView() {
-				this.initSettings()
-						.then(() => this.modifyResultsObj.call(this) )
-						.then(() => this.initDisplay());
-			},
-			modifyResultsObj() {
-				this.results.assignChunks(this.vidsPerChunk());
+			getMoreResults() {
+				return this.resultsManager.getResults('more');
 			},
 			setCSSProperties() {
 				document.body.style.setProperty('--figuresPerRow', this.colNumber());
@@ -471,13 +597,26 @@ $(function() {
 				}
 			},
 			initHeader() {
-				// let gaOn = !this.gaDisabled();
+				if (this.playlistResults()) {
+					this.setupPlaylistHeader();
+					return;
+				}
 
-				$querySpan.text(this.query);
-				// toggleGaIndicators(gaOn);
+				$querySpan.text(this.params[1]);
 			},
-			showChunk(n) {
-				let vids = this.results.getChunk(n);
+			setupPlaylistHeader() {
+				let that = this;
+
+				this.resultsManager.getPlaylistInfo(this.params[1]).then(function(data) {
+						let plHeaderHTML = that.playlistHeaderTemplate(data.items[0]);
+						$('.header_content.center').html(plHeaderHTML);
+				});
+			},
+			playlistResults() {
+				return this.queryType === 'playlistVideos';
+			},
+			renderPageNumber(n) {
+				let vids = this.resultsManager.getResultPage(n);
 				let html = this.thumbTemplate({ vids }).replace('-->', '');
 
 				$contentDiv.empty();
@@ -487,7 +626,7 @@ $(function() {
 				$(`.wrapper:nth-of-type(${this.colNumber()}n)`).css('margin-left', '0');
 				$(`.wrapper:nth-of-type(${this.colNumber()}n + 1)`).css('margin-right', rightMarginPcent);
 
-				this.chunkN = n;
+				this.currentPageNumber = n;
 			},
 			selectWrapper(idx) {
 				$('.selected').removeClass('selected');
@@ -499,71 +638,62 @@ $(function() {
 
 				$wrapper.addClass('selected');
 			},
-			showNextChunk() {
-				let nextChunk = (this.chunkN + 1);
-
-				this.showChunk(nextChunk);
+			renderNextPage() {
+				this.renderPageNumber(this.currentPageNumber + 1);
 			},
-			showPrevChunk() {
-				let prevChunk = this.chunkN - 1;
-
-				this.showChunk(prevChunk);
+			renderPrevPage() {
+				this.renderPageNumber(this.currentPageNumber - 1);
 			},
-			lastChunk(chunk) {
-				return chunk === this.results.chunkNumber - 1;
+			lastPage(page) {
+				return page === this.resultsManager.nOfPages() - 1;
 			},
-			firstChunk(chunk) {
-				return chunk === 0;
+			firstPage(page) {
+				return page === 0;
 			},
-			navigateFrom(idx, direction) {
-				let change = directionToChange[direction].call(this);
-				let nextIdx = idx + change;
-				let maxAllowedIdx = this.results.vidsPerChunk - 1;
+			navigate(idx, direction) {
+				let navObj = this.navigationManager.nextIdxAndPage(idx, direction);
+				let nextIdx = navObj.nextIdx;
+				switch (navObj.page) {
+					case 'next':
+						this.goToNextPage(nextIdx);
+						break;
+					case 'prev':
+						this.goToPrevPage(nextIdx);
+						break;
+					default:
+						this.selectWrapper(nextIdx);
+				}
+			},
+			goToNextPage(nextIdx) {
+				if (this.lastPage(this.currentPageNumber)) {
+					if (this.searchOver()) return;
 
-				if (nextIdx > maxAllowedIdx) {
-					if (this.lastChunk(this.chunkN)) return;
-
-					nextIdx = this.nextOutOfBoundsIdx(idx, direction);
-					this.showNextChunk();
-				} if (nextIdx < 0) {
-					if (this.firstChunk(this.chunkN)) return;
-
-					nextIdx = this.nextOutOfBoundsIdx(idx, direction);
-					this.showPrevChunk();
+					this.queryAndDisplayNextPage(nextIdx);
+					return;
 				}
 
+				this.renderNextPage();
 				this.selectWrapper(nextIdx);
 			},
-			idxAcrossPage(idx, direction) {
-				let compensation = ((this.rowNumber() - 1) * this.colNumber());
+			goToPrevPage(nextIdx) {
+				if (this.firstPage(this.currentPageNumber)) return;
 
-				if (direction === 'down') {
-					compensation = -compensation;
-				}
-
-				return idx + compensation;
+				this.renderPrevPage();
+				this.selectWrapper(nextIdx);
 			},
-			nextOutOfBoundsIdx(idx, direction) {
-				switch (direction) {
-					case 'up':
-					case 'down':
-						idx = this.idxAcrossPage(idx, direction);
-						break;
-					case 'left':
-						idx = 0;
-						break;
-					case 'right':
-						idx = -1;
-				}
-
-				return idx;
+			queryAndDisplayNextPage(nextIdx) {
+				this.getMoreResults()
+						.then(() => {
+							this.renderNextPage();
+							this.selectWrapper(nextIdx);
+						});
+			},
+			searchOver() {
+				return this.resultsManager.outOfQuota() || this.resultsManager.noMoreResults();
 			},
 			gaDisabled() {
 				return this.userSettings['gaze_aware'] === 'off';
 			},
-			// onBreak() {
-			// 	return this.onGaBreak;
-			// },
 			gaInactive() {
 			 	return this.gaDisabled() || this.onGazeBreak();
 			},
@@ -679,7 +809,7 @@ $(function() {
 						this.endGazeBreak();
 						break;
 					default:
-						this.navigateFrom(selectedIdx, key);
+						this.navigate(selectedIdx, key);
 				}
 			},
 			respondToPlayKey(key) {
@@ -690,13 +820,6 @@ $(function() {
 
 				this.playerManager.keyHandler(key);
 			},
-			// toggleGABreak(onBreak) {
-			// 	let newText = onBreak ? GA_ACTIVE_TEXT : GA_INACTIVE_TEXT;
-
-			// 	$gaButtonIndicator.toggleClass('active', onBreak);
-			// 	$gaTextIndicator.find('span').text(newText);
-			// 	this.onGaBreak = !onBreak;
-			// },
 			startGazeBreak() {
 				if (this.gaDisabled()) return;
 
@@ -710,10 +833,7 @@ $(function() {
 			onGazeBreak() {
 				return this.gazeBreak;
 			},
-			ajaxCall(url, data) {
-				return $.ajax({ url, data }).then((data) => data);
-			},
-			vidsPerChunk() {
+			vidsPerPage() {
 				return this.colNumber() * this.rowNumber();
 			},
 			colNumber() {
