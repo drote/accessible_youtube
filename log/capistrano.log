@@ -23,3 +23,181 @@
 
 Please make sure you have the correct access rights
 and the repository exists.
+  INFO ---------------------------------------------------------------------------
+  INFO START 2019-03-08 19:37:08 -0800 cap production deploy
+  INFO ---------------------------------------------------------------------------
+  INFO rbenv: rbenv_ruby is not set; ruby version will be defined by the remote hosts via rbenv
+ DEBUG [1291be46] Running /usr/bin/env which passenger as deploy@138.68.238.125
+ DEBUG [1291be46] Command: /usr/bin/env which passenger
+ DEBUG [f062e5ff] 	/usr/bin/passenger
+ DEBUG [f062e5ff] Finished in 1.362 seconds with exit status 0 (successful).
+  INFO [3a4a65e9] Running /usr/bin/env mkdir -p /tmp as deploy@138.68.238.125
+ DEBUG [3a4a65e9] Command: ( export RBENV_ROOT="$HOME/.rbenv" RBENV_VERSION="" ; /usr/bin/env mkdir -p /tmp )
+  INFO [d8cb401d] Finished in 0.100 seconds with exit status 0 (successful).
+ DEBUG Uploading /tmp/git-ssh-accessible_youtube-production-drote.sh 0.0%
+  INFO Uploading /tmp/git-ssh-accessible_youtube-production-drote.sh 100.0%
+  INFO [9ab0dfde] Running /usr/bin/env chmod 700 /tmp/git-ssh-accessible_youtube-production-drote.sh as deploy@138.68.238.125
+ DEBUG [9ab0dfde] Command: ( export RBENV_ROOT="$HOME/.rbenv" RBENV_VERSION="" ; /usr/bin/env chmod 700 /tmp/git-ssh-accessible_youtube-production-drote.sh )
+  INFO [2e2524c7] Finished in 0.136 seconds with exit status 0 (successful).
+  INFO [97f3e6da] Running /usr/bin/env git ls-remote git@github.com:drote/accessible_youtube.git HEAD as deploy@138.68.238.125
+ DEBUG [97f3e6da] Command: ( export RBENV_ROOT="$HOME/.rbenv" RBENV_VERSION="" GIT_ASKPASS="/bin/echo" GIT_SSH="/tmp/git-ssh-accessible_youtube-production-drote.sh" ; /usr/bin/env git ls-remote git@github.com:drote/accessible_youtube.git HEAD )
+ DEBUG [34a48512] 	git@github.com: Permission denied (publickey).
+ DEBUG [34a48512] 	fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.
+  INFO ---------------------------------------------------------------------------
+  INFO START 2019-03-08 19:37:53 -0800 cap production deploy
+  INFO ---------------------------------------------------------------------------
+  INFO rbenv: rbenv_ruby is not set; ruby version will be defined by the remote hosts via rbenv
+ DEBUG [a646bd60] Running /usr/bin/env which passenger as deploy@138.68.238.125
+ DEBUG [a646bd60] Command: /usr/bin/env which passenger
+ DEBUG [b6adf06f] 	/usr/bin/passenger
+ DEBUG [b6adf06f] Finished in 1.239 seconds with exit status 0 (successful).
+  INFO [4dd216ac] Running /usr/bin/env mkdir -p /tmp as deploy@138.68.238.125
+ DEBUG [4dd216ac] Command: ( export RBENV_ROOT="$HOME/.rbenv" RBENV_VERSION="" ; /usr/bin/env mkdir -p /tmp )
+  INFO [b4107deb] Finished in 0.100 seconds with exit status 0 (successful).
+ DEBUG Uploading /tmp/git-ssh-accessible_youtube-production-drote.sh 0.0%
+  INFO Uploading /tmp/git-ssh-accessible_youtube-production-drote.sh 100.0%
+  INFO [a2a4a82f] Running /usr/bin/env chmod 700 /tmp/git-ssh-accessible_youtube-production-drote.sh as deploy@138.68.238.125
+ DEBUG [a2a4a82f] Command: ( export RBENV_ROOT="$HOME/.rbenv" RBENV_VERSION="" ; /usr/bin/env chmod 700 /tmp/git-ssh-accessible_youtube-production-drote.sh )
+  INFO [a3a97dc2] Finished in 0.147 seconds with exit status 0 (successful).
+  INFO [510667d4] Running /usr/bin/env git ls-remote git@github.com:drote/accessible_youtube.git HEAD as deploy@138.68.238.125
+ DEBUG [510667d4] Command: ( export RBENV_ROOT="$HOME/.rbenv" RBENV_VERSION="" GIT_ASKPASS="/bin/echo" GIT_SSH="/tmp/git-ssh-accessible_youtube-production-drote.sh" ; /usr/bin/env git ls-remote git@github.com:drote/accessible_youtube.git HEAD )
+ DEBUG [f808b2d2] 	git@github.com: Permission denied (publickey).
+ DEBUG [f808b2d2] 	fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.
+  INFO ---------------------------------------------------------------------------
+  INFO START 2019-03-08 19:43:21 -0800 cap production deploy
+  INFO ---------------------------------------------------------------------------
+  INFO rbenv: rbenv_ruby is not set; ruby version will be defined by the remote hosts via rbenv
+ DEBUG [cc2a5395] Running /usr/bin/env which passenger as deploy@138.68.238.125
+ DEBUG [cc2a5395] Command: /usr/bin/env which passenger
+ DEBUG [021c9319] 	/usr/bin/passenger
+ DEBUG [021c9319] Finished in 1.287 seconds with exit status 0 (successful).
+  INFO [b694587d] Running /usr/bin/env mkdir -p /tmp as deploy@138.68.238.125
+ DEBUG [b694587d] Command: ( export RBENV_ROOT="$HOME/.rbenv" RBENV_VERSION="" ; /usr/bin/env mkdir -p /tmp )
+  INFO [a6f6693e] Finished in 0.138 seconds with exit status 0 (successful).
+ DEBUG Uploading /tmp/git-ssh-accessible_youtube-production-drote.sh 0.0%
+  INFO Uploading /tmp/git-ssh-accessible_youtube-production-drote.sh 100.0%
+  INFO [406c5e9b] Running /usr/bin/env chmod 700 /tmp/git-ssh-accessible_youtube-production-drote.sh as deploy@138.68.238.125
+ DEBUG [406c5e9b] Command: ( export RBENV_ROOT="$HOME/.rbenv" RBENV_VERSION="" ; /usr/bin/env chmod 700 /tmp/git-ssh-accessible_youtube-production-drote.sh )
+  INFO [11c683f1] Finished in 0.141 seconds with exit status 0 (successful).
+  INFO [e84f02b4] Running /usr/bin/env git ls-remote git@github.com:drote/accessible_youtube.git HEAD as deploy@138.68.238.125
+ DEBUG [e84f02b4] Command: ( export RBENV_ROOT="$HOME/.rbenv" RBENV_VERSION="" GIT_ASKPASS="/bin/echo" GIT_SSH="/tmp/git-ssh-accessible_youtube-production-drote.sh" ; /usr/bin/env git ls-remote git@github.com:drote/accessible_youtube.git HEAD )
+ DEBUG [1c1ee3a2] 	b878f2bf78a890db4edfa294f3e6f0624c841d44	HEAD
+  INFO [1c1ee3a2] Finished in 0.748 seconds with exit status 0 (successful).
+  INFO [0b5e72fe] Running /usr/bin/env mkdir -p /home/deploy/accessible_youtube/shared /home/deploy/accessible_youtube/releases as deploy@138.68.238.125
+ DEBUG [0b5e72fe] Command: ( export RBENV_ROOT="$HOME/.rbenv" RBENV_VERSION="" ; /usr/bin/env mkdir -p /home/deploy/accessible_youtube/shared /home/deploy/accessible_youtube/releases )
+  INFO [d2f65287] Finished in 0.102 seconds with exit status 0 (successful).
+  INFO [372eb7ce] Running /usr/bin/env mkdir -p /home/deploy/accessible_youtube/shared/log /home/deploy/accessible_youtube/shared/tmp/pids /home/deploy/accessible_youtube/shared/tmp/cache /home/deploy/accessible_youtube/shared/tmp/spckets /home/deploy/accessible_youtube/shared/vendor/bundle as deploy@138.68.238.125
+ DEBUG [372eb7ce] Command: ( export RBENV_ROOT="$HOME/.rbenv" RBENV_VERSION="" ; /usr/bin/env mkdir -p /home/deploy/accessible_youtube/shared/log /home/deploy/accessible_youtube/shared/tmp/pids /home/deploy/accessible_youtube/shared/tmp/cache /home/deploy/accessible_youtube/shared/tmp/spckets /home/deploy/accessible_youtube/shared/vendor/bundle )
+  INFO [a1f13759] Finished in 0.139 seconds with exit status 0 (successful).
+ DEBUG [4806a240] Running [ -f /home/deploy/accessible_youtube/current/REVISION ] as deploy@138.68.238.125
+ DEBUG [4806a240] Command: [ -f /home/deploy/accessible_youtube/current/REVISION ]
+ DEBUG [d13a3c23] Finished in 0.141 seconds with exit status 1 (failed).
+ DEBUG [77215b35] Running [ -f /home/deploy/accessible_youtube/repo/HEAD ] as deploy@138.68.238.125
+ DEBUG [77215b35] Command: [ -f /home/deploy/accessible_youtube/repo/HEAD ]
+ DEBUG [97c7c4af] Finished in 0.134 seconds with exit status 1 (failed).
+ DEBUG [fbd01825] Running if test ! -d /home/deploy/accessible_youtube; then echo "Directory does not exist '/home/deploy/accessible_youtube'" 1>&2; false; fi as deploy@138.68.238.125
+ DEBUG [fbd01825] Command: if test ! -d /home/deploy/accessible_youtube; then echo "Directory does not exist '/home/deploy/accessible_youtube'" 1>&2; false; fi
+ DEBUG [7f469ee1] Finished in 0.097 seconds with exit status 0 (successful).
+  INFO [a3e02670] Running /usr/bin/env git clone --mirror git@github.com:drote/accessible_youtube.git /home/deploy/accessible_youtube/repo as deploy@138.68.238.125
+ DEBUG [a3e02670] Command: cd /home/deploy/accessible_youtube && ( export RBENV_ROOT="$HOME/.rbenv" RBENV_VERSION="" GIT_ASKPASS="/bin/echo" GIT_SSH="/tmp/git-ssh-accessible_youtube-production-drote.sh" ; /usr/bin/env git clone --mirror git@github.com:drote/accessible_youtube.git /home/deploy/accessible_youtube/repo )
+ DEBUG [e8be510c] 	Cloning into bare repository '/home/deploy/accessible_youtube/repo'...
+  INFO [e8be510c] Finished in 0.746 seconds with exit status 0 (successful).
+ DEBUG [d1103e16] Running if test ! -d /home/deploy/accessible_youtube/repo; then echo "Directory does not exist '/home/deploy/accessible_youtube/repo'" 1>&2; false; fi as deploy@138.68.238.125
+ DEBUG [d1103e16] Command: if test ! -d /home/deploy/accessible_youtube/repo; then echo "Directory does not exist '/home/deploy/accessible_youtube/repo'" 1>&2; false; fi
+ DEBUG [9c10ea1c] Finished in 0.095 seconds with exit status 0 (successful).
+  INFO [6a506718] Running /usr/bin/env git remote set-url origin git@github.com:drote/accessible_youtube.git as deploy@138.68.238.125
+ DEBUG [6a506718] Command: cd /home/deploy/accessible_youtube/repo && ( export RBENV_ROOT="$HOME/.rbenv" RBENV_VERSION="" GIT_ASKPASS="/bin/echo" GIT_SSH="/tmp/git-ssh-accessible_youtube-production-drote.sh" ; /usr/bin/env git remote set-url origin git@github.com:drote/accessible_youtube.git )
+  INFO [fbdaa94f] Finished in 0.137 seconds with exit status 0 (successful).
+  INFO [2e2d06fd] Running /usr/bin/env git remote update --prune as deploy@138.68.238.125
+ DEBUG [2e2d06fd] Command: cd /home/deploy/accessible_youtube/repo && ( export RBENV_ROOT="$HOME/.rbenv" RBENV_VERSION="" GIT_ASKPASS="/bin/echo" GIT_SSH="/tmp/git-ssh-accessible_youtube-production-drote.sh" ; /usr/bin/env git remote update --prune )
+ DEBUG [303f7e9c] 	Fetching origin
+  INFO [303f7e9c] Finished in 0.660 seconds with exit status 0 (successful).
+ DEBUG [d1ae8fba] Running if test ! -d /home/deploy/accessible_youtube/repo; then echo "Directory does not exist '/home/deploy/accessible_youtube/repo'" 1>&2; false; fi as deploy@138.68.238.125
+ DEBUG [d1ae8fba] Command: if test ! -d /home/deploy/accessible_youtube/repo; then echo "Directory does not exist '/home/deploy/accessible_youtube/repo'" 1>&2; false; fi
+ DEBUG [f54ddd47] Finished in 0.093 seconds with exit status 0 (successful).
+  INFO [e77864f2] Running /usr/bin/env mkdir -p /home/deploy/accessible_youtube/releases/20190309034324 as deploy@138.68.238.125
+ DEBUG [e77864f2] Command: cd /home/deploy/accessible_youtube/repo && ( export RBENV_ROOT="$HOME/.rbenv" RBENV_VERSION="" GIT_ASKPASS="/bin/echo" GIT_SSH="/tmp/git-ssh-accessible_youtube-production-drote.sh" ; /usr/bin/env mkdir -p /home/deploy/accessible_youtube/releases/20190309034324 )
+  INFO [0c0f1639] Finished in 0.098 seconds with exit status 0 (successful).
+  INFO [ac344bd0] Running /usr/bin/env git archive master | /usr/bin/env tar -x -f - -C /home/deploy/accessible_youtube/releases/20190309034324 as deploy@138.68.238.125
+ DEBUG [ac344bd0] Command: cd /home/deploy/accessible_youtube/repo && ( export RBENV_ROOT="$HOME/.rbenv" RBENV_VERSION="" GIT_ASKPASS="/bin/echo" GIT_SSH="/tmp/git-ssh-accessible_youtube-production-drote.sh" ; /usr/bin/env git archive master | /usr/bin/env tar -x -f - -C /home/deploy/accessible_youtube/releases/20190309034324 )
+  INFO [d9d9e95e] Finished in 0.149 seconds with exit status 0 (successful).
+ DEBUG [e514f99b] Running if test ! -d /home/deploy/accessible_youtube/repo; then echo "Directory does not exist '/home/deploy/accessible_youtube/repo'" 1>&2; false; fi as deploy@138.68.238.125
+ DEBUG [e514f99b] Command: if test ! -d /home/deploy/accessible_youtube/repo; then echo "Directory does not exist '/home/deploy/accessible_youtube/repo'" 1>&2; false; fi
+ DEBUG [fde2b312] Finished in 0.140 seconds with exit status 0 (successful).
+ DEBUG [9f6375fa] Running /usr/bin/env git rev-list --max-count=1 master as deploy@138.68.238.125
+ DEBUG [9f6375fa] Command: cd /home/deploy/accessible_youtube/repo && ( export RBENV_ROOT="$HOME/.rbenv" RBENV_VERSION="" GIT_ASKPASS="/bin/echo" GIT_SSH="/tmp/git-ssh-accessible_youtube-production-drote.sh" ; /usr/bin/env git rev-list --max-count=1 master )
+ DEBUG [0b432961] 	b878f2bf78a890db4edfa294f3e6f0624c841d44
+ DEBUG [0b432961] Finished in 0.139 seconds with exit status 0 (successful).
+ DEBUG [f6262f21] Running if test ! -d /home/deploy/accessible_youtube/releases/20190309034324; then echo "Directory does not exist '/home/deploy/accessible_youtube/releases/20190309034324'" 1>&2; false; fi as deploy@138.68.238.125
+ DEBUG [f6262f21] Command: if test ! -d /home/deploy/accessible_youtube/releases/20190309034324; then echo "Directory does not exist '/home/deploy/accessible_youtube/releases/20190309034324'" 1>&2; false; fi
+ DEBUG [dbda7aac] Finished in 0.097 seconds with exit status 0 (successful).
+  INFO [5612857f] Running /usr/bin/env echo "b878f2bf78a890db4edfa294f3e6f0624c841d44" > REVISION as deploy@138.68.238.125
+ DEBUG [5612857f] Command: cd /home/deploy/accessible_youtube/releases/20190309034324 && ( export RBENV_ROOT="$HOME/.rbenv" RBENV_VERSION="" ; /usr/bin/env echo "b878f2bf78a890db4edfa294f3e6f0624c841d44" > REVISION )
+  INFO [62a4971d] Finished in 0.142 seconds with exit status 0 (successful).
+  INFO [7ba7caa5] Running /usr/bin/env mkdir -p /home/deploy/accessible_youtube/releases/20190309034324 /home/deploy/accessible_youtube/releases/20190309034324/tmp /home/deploy/accessible_youtube/releases/20190309034324/vendor as deploy@138.68.238.125
+ DEBUG [7ba7caa5] Command: ( export RBENV_ROOT="$HOME/.rbenv" RBENV_VERSION="" ; /usr/bin/env mkdir -p /home/deploy/accessible_youtube/releases/20190309034324 /home/deploy/accessible_youtube/releases/20190309034324/tmp /home/deploy/accessible_youtube/releases/20190309034324/vendor )
+  INFO [f1be9a5e] Finished in 0.141 seconds with exit status 0 (successful).
+ DEBUG [554d4bc8] Running [ -L /home/deploy/accessible_youtube/releases/20190309034324/log ] as deploy@138.68.238.125
+ DEBUG [554d4bc8] Command: [ -L /home/deploy/accessible_youtube/releases/20190309034324/log ]
+ DEBUG [5a79a531] Finished in 0.147 seconds with exit status 1 (failed).
+ DEBUG [5812c642] Running [ -d /home/deploy/accessible_youtube/releases/20190309034324/log ] as deploy@138.68.238.125
+ DEBUG [5812c642] Command: [ -d /home/deploy/accessible_youtube/releases/20190309034324/log ]
+ DEBUG [1609135a] Finished in 0.095 seconds with exit status 0 (successful).
+  INFO [9c4b82ca] Running /usr/bin/env rm -rf /home/deploy/accessible_youtube/releases/20190309034324/log as deploy@138.68.238.125
+ DEBUG [9c4b82ca] Command: ( export RBENV_ROOT="$HOME/.rbenv" RBENV_VERSION="" ; /usr/bin/env rm -rf /home/deploy/accessible_youtube/releases/20190309034324/log )
+  INFO [ff6bcf72] Finished in 0.141 seconds with exit status 0 (successful).
+  INFO [dd09fcdb] Running /usr/bin/env ln -s /home/deploy/accessible_youtube/shared/log /home/deploy/accessible_youtube/releases/20190309034324/log as deploy@138.68.238.125
+ DEBUG [dd09fcdb] Command: ( export RBENV_ROOT="$HOME/.rbenv" RBENV_VERSION="" ; /usr/bin/env ln -s /home/deploy/accessible_youtube/shared/log /home/deploy/accessible_youtube/releases/20190309034324/log )
+  INFO [a3c01076] Finished in 0.143 seconds with exit status 0 (successful).
+ DEBUG [a221cc2a] Running [ -L /home/deploy/accessible_youtube/releases/20190309034324/tmp/pids ] as deploy@138.68.238.125
+ DEBUG [a221cc2a] Command: [ -L /home/deploy/accessible_youtube/releases/20190309034324/tmp/pids ]
+ DEBUG [d7421be7] Finished in 0.141 seconds with exit status 1 (failed).
+ DEBUG [867c1038] Running [ -d /home/deploy/accessible_youtube/releases/20190309034324/tmp/pids ] as deploy@138.68.238.125
+ DEBUG [867c1038] Command: [ -d /home/deploy/accessible_youtube/releases/20190309034324/tmp/pids ]
+ DEBUG [0d6b13b6] Finished in 0.099 seconds with exit status 1 (failed).
+  INFO [52e6122b] Running /usr/bin/env ln -s /home/deploy/accessible_youtube/shared/tmp/pids /home/deploy/accessible_youtube/releases/20190309034324/tmp/pids as deploy@138.68.238.125
+ DEBUG [52e6122b] Command: ( export RBENV_ROOT="$HOME/.rbenv" RBENV_VERSION="" ; /usr/bin/env ln -s /home/deploy/accessible_youtube/shared/tmp/pids /home/deploy/accessible_youtube/releases/20190309034324/tmp/pids )
+  INFO [d17f6bcf] Finished in 0.147 seconds with exit status 0 (successful).
+ DEBUG [3dadbc10] Running [ -L /home/deploy/accessible_youtube/releases/20190309034324/tmp/cache ] as deploy@138.68.238.125
+ DEBUG [3dadbc10] Command: [ -L /home/deploy/accessible_youtube/releases/20190309034324/tmp/cache ]
+ DEBUG [17b9b04f] Finished in 0.142 seconds with exit status 1 (failed).
+ DEBUG [288ae28a] Running [ -d /home/deploy/accessible_youtube/releases/20190309034324/tmp/cache ] as deploy@138.68.238.125
+ DEBUG [288ae28a] Command: [ -d /home/deploy/accessible_youtube/releases/20190309034324/tmp/cache ]
+ DEBUG [f9282463] Finished in 0.138 seconds with exit status 1 (failed).
+  INFO [38075f63] Running /usr/bin/env ln -s /home/deploy/accessible_youtube/shared/tmp/cache /home/deploy/accessible_youtube/releases/20190309034324/tmp/cache as deploy@138.68.238.125
+ DEBUG [38075f63] Command: ( export RBENV_ROOT="$HOME/.rbenv" RBENV_VERSION="" ; /usr/bin/env ln -s /home/deploy/accessible_youtube/shared/tmp/cache /home/deploy/accessible_youtube/releases/20190309034324/tmp/cache )
+  INFO [017c195a] Finished in 0.137 seconds with exit status 0 (successful).
+ DEBUG [7c20c0a9] Running [ -L /home/deploy/accessible_youtube/releases/20190309034324/tmp/spckets ] as deploy@138.68.238.125
+ DEBUG [7c20c0a9] Command: [ -L /home/deploy/accessible_youtube/releases/20190309034324/tmp/spckets ]
+ DEBUG [8a91bd16] Finished in 0.141 seconds with exit status 1 (failed).
+ DEBUG [c4c1cbe4] Running [ -d /home/deploy/accessible_youtube/releases/20190309034324/tmp/spckets ] as deploy@138.68.238.125
+ DEBUG [c4c1cbe4] Command: [ -d /home/deploy/accessible_youtube/releases/20190309034324/tmp/spckets ]
+ DEBUG [9ddb2b18] Finished in 0.136 seconds with exit status 1 (failed).
+  INFO [b5b867f3] Running /usr/bin/env ln -s /home/deploy/accessible_youtube/shared/tmp/spckets /home/deploy/accessible_youtube/releases/20190309034324/tmp/spckets as deploy@138.68.238.125
+ DEBUG [b5b867f3] Command: ( export RBENV_ROOT="$HOME/.rbenv" RBENV_VERSION="" ; /usr/bin/env ln -s /home/deploy/accessible_youtube/shared/tmp/spckets /home/deploy/accessible_youtube/releases/20190309034324/tmp/spckets )
+  INFO [2fec5c97] Finished in 0.099 seconds with exit status 0 (successful).
+ DEBUG [e882a61e] Running [ -L /home/deploy/accessible_youtube/releases/20190309034324/vendor/bundle ] as deploy@138.68.238.125
+ DEBUG [e882a61e] Command: [ -L /home/deploy/accessible_youtube/releases/20190309034324/vendor/bundle ]
+ DEBUG [554a26b4] Finished in 0.139 seconds with exit status 1 (failed).
+ DEBUG [30334972] Running [ -d /home/deploy/accessible_youtube/releases/20190309034324/vendor/bundle ] as deploy@138.68.238.125
+ DEBUG [30334972] Command: [ -d /home/deploy/accessible_youtube/releases/20190309034324/vendor/bundle ]
+ DEBUG [76190d79] Finished in 0.136 seconds with exit status 1 (failed).
+  INFO [03ae4d1a] Running /usr/bin/env ln -s /home/deploy/accessible_youtube/shared/vendor/bundle /home/deploy/accessible_youtube/releases/20190309034324/vendor/bundle as deploy@138.68.238.125
+ DEBUG [03ae4d1a] Command: ( export RBENV_ROOT="$HOME/.rbenv" RBENV_VERSION="" ; /usr/bin/env ln -s /home/deploy/accessible_youtube/shared/vendor/bundle /home/deploy/accessible_youtube/releases/20190309034324/vendor/bundle )
+  INFO [2826d118] Finished in 0.140 seconds with exit status 0 (successful).
+ DEBUG [bcbf54aa] Running if test ! -d /home/deploy/accessible_youtube/releases/20190309034324; then echo "Directory does not exist '/home/deploy/accessible_youtube/releases/20190309034324'" 1>&2; false; fi as deploy@138.68.238.125
+ DEBUG [bcbf54aa] Command: if test ! -d /home/deploy/accessible_youtube/releases/20190309034324; then echo "Directory does not exist '/home/deploy/accessible_youtube/releases/20190309034324'" 1>&2; false; fi
+ DEBUG [92452593] Finished in 0.093 seconds with exit status 0 (successful).
+ DEBUG [b515ff0d] Running $HOME/.rbenv/bin/rbenv exec bundle check --path /home/deploy/accessible_youtube/shared/bundle as deploy@138.68.238.125
+ DEBUG [b515ff0d] Command: cd /home/deploy/accessible_youtube/releases/20190309034324 && ( export RBENV_ROOT="$HOME/.rbenv" RBENV_VERSION="" ; $HOME/.rbenv/bin/rbenv exec bundle check --path /home/deploy/accessible_youtube/shared/bundle )
+ DEBUG [634225bb] 	Your Ruby version is 2.6.1, but your Gemfile specified 2.4.1
+ DEBUG [634225bb] Finished in 0.572 seconds with exit status 18 (failed).
+  INFO [75b498d3] Running $HOME/.rbenv/bin/rbenv exec bundle install --path /home/deploy/accessible_youtube/shared/bundle --jobs 4 --without development test --deployment --quiet as deploy@138.68.238.125
+ DEBUG [75b498d3] Command: cd /home/deploy/accessible_youtube/releases/20190309034324 && ( export RBENV_ROOT="$HOME/.rbenv" RBENV_VERSION="" ; $HOME/.rbenv/bin/rbenv exec bundle install --path /home/deploy/accessible_youtube/shared/bundle --jobs 4 --without development test --deployment --quiet )
+ DEBUG [2280afde] 	Your Ruby version is 2.6.1, but your Gemfile specified 2.4.1

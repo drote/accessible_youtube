@@ -8,4 +8,4 @@ gem "capistrano-bundler"
 gem 'capistrano-rbenv', '~> 2.1', '>=2.1.4'
 gem 'capistrano-passenger', '~> 0.2.0'
 
-ruby '2.4.1'
+ruby '2.6.1'
