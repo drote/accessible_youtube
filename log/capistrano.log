@@ -1,0 +1,25 @@
+# Logfile created on 2019-03-08 19:31:49 -0800 by logger.rb/56815
+  INFO ---------------------------------------------------------------------------
+  INFO START 2019-03-08 19:31:49 -0800 cap production deploy
+  INFO ---------------------------------------------------------------------------
+  INFO rbenv: rbenv_ruby is not set; ruby version will be defined by the remote hosts via rbenv
+ DEBUG [cf82a9df] Running /usr/bin/env which passenger as deploy@138.68.238.125
+ DEBUG [cf82a9df] Command: /usr/bin/env which passenger
+ DEBUG [42bd8a01] 	/usr/bin/passenger
+ DEBUG [42bd8a01] Finished in 1.394 seconds with exit status 0 (successful).
+  INFO [79568733] Running /usr/bin/env mkdir -p /tmp as deploy@138.68.238.125
+ DEBUG [79568733] Command: ( export RBENV_ROOT="$HOME/.rbenv" RBENV_VERSION="" ; /usr/bin/env mkdir -p /tmp )
+  INFO [d2478420] Finished in 0.121 seconds with exit status 0 (successful).
+ DEBUG Uploading /tmp/git-ssh-accessible_youtube-production-drote.sh 0.0%
+  INFO Uploading /tmp/git-ssh-accessible_youtube-production-drote.sh 100.0%
+  INFO [e2f82dde] Running /usr/bin/env chmod 700 /tmp/git-ssh-accessible_youtube-production-drote.sh as deploy@138.68.238.125
+ DEBUG [e2f82dde] Command: ( export RBENV_ROOT="$HOME/.rbenv" RBENV_VERSION="" ; /usr/bin/env chmod 700 /tmp/git-ssh-accessible_youtube-production-drote.sh )
+  INFO [f097134a] Finished in 0.144 seconds with exit status 0 (successful).
+  INFO [d87b6cbc] Running /usr/bin/env git ls-remote git@github.com:drote/accessible_youtube.git HEAD as deploy@138.68.238.125
+ DEBUG [d87b6cbc] Command: ( export RBENV_ROOT="$HOME/.rbenv" RBENV_VERSION="" GIT_ASKPASS="/bin/echo" GIT_SSH="/tmp/git-ssh-accessible_youtube-production-drote.sh" ; /usr/bin/env git ls-remote git@github.com:drote/accessible_youtube.git HEAD )
+ DEBUG [d90647cd] 	Warning: Permanently added 'github.com,192.30.255.112' (RSA) to the list of known hosts.
+ DEBUG [d90647cd] 	git@github.com: Permission denied (publickey).
+ DEBUG [d90647cd] 	fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.

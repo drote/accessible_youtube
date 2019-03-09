@@ -3,7 +3,7 @@ lock "~> 3.11.0"
 
 set :application, "accessible_youtube"
 set :repo_url, "git@github.com:drote/accessible_youtube.git"
-set :deploy_to, "/home/deploy/#{fetch :application}"
+set :deploy_to, "/home/deploy/accessible_youtube"
 append :linked_dirs, 'log', 'tmp/pids', 'tmp/cache', 'tmp/spckets', 'vendor/bundle'
 
 # Default branch is :master
