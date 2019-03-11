@@ -27,6 +27,11 @@ get '/search' do
   erb :search_he
 end
 
+get '/playlist_search' do 
+  @title = "D-Bur Playlist Search"
+  erb :playlist_search_he
+end
+
 get '/results' do
   @title = "D-Bur Tube (#{params['q']})"
   erb :results_he
