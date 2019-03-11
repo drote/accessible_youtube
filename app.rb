@@ -54,6 +54,7 @@ end
 
 get '/yt_connect' do
   erb :yt_connect_he
+end
 
 not_found do
   status 404
