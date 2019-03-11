@@ -18,7 +18,6 @@ DEFAULT_SETTINGS = {
 YEAR_FROM_NOW = Time.now + (3600 * 24 * 365)
 JSON_DS = JSON.generate(DEFAULT_SETTINGS)
 
-
 get '/' do
   redirect '/search'
 end
@@ -55,7 +54,6 @@ end
 
 get '/yt_connect' do
   erb :yt_connect_he
-end
 
 not_found do
   status 404
