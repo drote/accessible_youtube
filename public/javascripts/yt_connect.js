@@ -11,7 +11,7 @@ function handleClientLoad() {
 	gapi.load('client:auth2', initClient);
 }
 
-function updateSigninStauts(isSignedIn) {
+function updateSigninStatus(isSignedIn) {
 	if (isSignedIn) {
 		$authorizeButton.hide();
 		$signoutButton.show();

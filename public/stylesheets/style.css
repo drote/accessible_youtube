@@ -6,7 +6,7 @@ html {
 
 body {
 	--circleRadius: 40px;
-	--headerHeight: 12vh;
+	--headerHeight: 75px;
 	--highlightColor: #3d4f30;
 	--mainLightColor: #fafafa;
 	--mainAndHeaderWidth: 100%;
@@ -36,16 +36,14 @@ header p {
 }
 
 .header_content {
-	margin: 0 2%;
 	align-items: center;
 	display: flex;
 	height: 100%;
 }
 
 .header_content.center {
-	justify-content: space-between;
-	padding-right: 50px;
-	width: 40%;
+	justify-content: space-evenly;
+	width: 50%;
 }
 
 .header_content.left {
@@ -53,58 +51,52 @@ header p {
 	width: 10%;
 }
 
+.header_content.right {
+	align-items: flex-end;
+	width: 150px;
+}
+
+
 .header_content > img {
 	z-index: 1;
 }
 
-.header_content a {
-	padding: 2px;
+.icon {
 	color: var(--highlightColor);
-	margin-right: 10px;
+	margin-left: 10px;
+	padding: 2px;
 }
 
-.header_content a:hover {
+.icon:hover {
 	color: #d36767;
 }
 
 #query {
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   font-weight: bold;
+  text-align: center;
   text-transform: capitalize;
 }
 
-#ga_button {
-	cursor: pointer;
-	border-radius: 2px;
-	box-shadow: 0 0 5px 2px red;
-	position: relative;
-}
-
-#ga_button:hover {
-	box-shadow: 0 0 7px 4px red;
-}
-
-#ga_button.active {
-	box-shadow: 0 0 5px 2px var(--highlightColor);
-}
-
-#ga_button.active:hover {
-	box-shadow: 0 0 7px 4px var(--highlightColor);
-}
-
-#ga_button > p {
-	font-size: 0.9vw;
-	padding: 15px 10px;
-}
 
 #logo {
-	background-image: url(../data/icons/logo.jpg);
+	background-image: url(../data/icons/dbur_logo.png);
 	background-repeat: no-repeat;
-	background-size: contain;
-	cursor: pointer;
-	height: var(--headerHeight);
-	width: var(--headerHeight);
-	margin-right: var(--itemMargin);
+	background-size: 75px;
+	height: 55px;
+	width: 75px;
+	position: absolute;
+	top: 0;
+	margin-right: 35px;
+}
+
+#yt_logo {
+	background-image: url(../data/icons/youtube_logo.png);
+	background-position: -25px, 0;
+	background-repeat: no-repeat;
+	background-size: 200px;
+	height: 20px;
+	width: 150px;
 }
 
 header input,
@@ -145,11 +137,11 @@ button.search:hover {
 	background-color: var(--mainLightColor);
 	color: var(--highlightColor);
 }
-/* MAIN PAGE */
 
+/* MAIN PAGE */
 main {
 	font-size: 0;
-	height: 90%;
+	height: calc(100% - var(--headerHeight));
 	position: absolute;
 	transform: translateY(var(--headerHeight));
 	width: var(--mainAndHeaderWidth);

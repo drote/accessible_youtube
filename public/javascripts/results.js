@@ -7,24 +7,19 @@ $(function() {
 	const $playerModal = $('#player_modal_layer');
 	const $playerContainer = $('#player_container');
 	const $seperator = $('#seperator');
+	const $headerP = $('header > p');
 	const $querySpan = $('#query');
 	const $logo = $('#logo');
 	const PLAYER_DIVS = [$playerContainer, $playerModal, $seperator];
 
-
 	const ajaxCall = function(url, data) {
-		return $.ajax({ url, data }).then((data) => data);
+		return $.ajax({ url, data })
+						.then((data) => data);
 	}
 
 	// RESULTS MANAGER
 	const ResultsManager = (function() {
-		const YT_SEARCH_URL = '/search';
-		const YT_PLAYLIST_URL= '/playlistItems';
-		const YT_API_KEY = 'AIzaSyD0HiZ1FdFt3QK10ndUBUfddC6hyj19IW8';
-		const YT_SEARCH_FIELDS = 'nextPageToken,items(id(videoId),snippet(title,description,thumbnails(high)))';
-		const YT_PLAYLIST_FIELDS = 'nextPageToken,items(snippet(resourceId(videoId),title,description,thumbnails(high(url))))';
 		const MAX_ALLOWED_VIDEOS = 100;
-
 		const makeQueryString = (requestParams) => {
 			let params = [];
 
@@ -33,6 +28,15 @@ $(function() {
 			});
 
 			return encodeURI(`${params.join('&')}`);
+		}
+
+		const youtubeResource = function(q_type, max_results, q_param, token) {
+			let queryString = makeQueryString({ q_type, max_results, q_param, token })
+
+			return $.ajax({
+				url: `/youtube_resource`,
+				data: queryString
+			});
 		}
 
 		const parseForTemplate = (vid) => {
@@ -55,76 +59,40 @@ $(function() {
 
 		return {
 			allResults: [],
-			urlRoot: 'https://www.googleapis.com/youtube/v3',
-			url: null,
+			type: null,
 			nextPageToken: null,
 
-			requestParams: {
-				key: YT_API_KEY,
-				part: 'snippet',
-				maxResults: null,
-				fields: null,
-				type: null,
-				order: 'viewCount',
-			},
-
 			init(query, queryType, vidsPerPage) {
-				this.initRequestParams(query, queryType, vidsPerPage);
-				this.initUrl(queryType);
+				this.queryType = queryType;
+				this.maxResults = vidsPerPage;
+				this.query = encodeURI(query);
 
 				return this;
 			},
-			initRequestParams(query, queryType, vidsPerPage) {
-				if (queryType === 'searchQuery') {
-					this.requestParams['q'] = query;
-					this.requestParams.fields = YT_SEARCH_FIELDS;
-				} else {
-					this.requestParams['playlistId'] = query;
-					this.requestParams['fields'] = YT_PLAYLIST_FIELDS;
-				}
-
-				this.requestParams.type = 'video';
-				this.requestParams.maxResults = vidsPerPage;
-			},
-			initUrl(queryType) {
-				let address = YT_SEARCH_URL;
-
-				if (queryType === 'playlistVideos') {
-					address = YT_PLAYLIST_URL;
-				}
-
-				this.url = this.urlRoot + address;
-			},
 			getResults(more) {
 				let that = this;
+				let token;
 
 				if (more) {
-					this.requestParams['pageToken'] = this.nextPageToken;
+					token = this.nextPageToken;
 				}
 
-				let queryString = makeQueryString(this.requestParams);
-
-				return this.fetch(queryString)
+				return this.fetch(this.queryType, this.maxResults, this.query, token)
 									 .then(function(response) {
 									 	 that.addResults(response.items, response.nextPageToken);
 									 });
 			},
 			getPlaylistInfo(id) {
-				let plInfoRequestParams = {
-					id,
-					key: YT_API_KEY,
-					part: 'snippet',
-					maxResults: '1',
-					fields: 'items(snippet(title,description,thumbnails(medium(url))))',
-				};
-
-				let url = this.urlRoot + '/playlists';
-				let queryString = makeQueryString(plInfoRequestParams);
-
-				return ajaxCall(url, queryString);
+				return youtubeResource('playlist_info', '1', id);
 			},
-			fetch(queryString) {
-				return ajaxCall(this.url, queryString);
+			getVidInfo(id) {
+				return youtubeResource('vid_info', '1', id);
+			},
+			getChannelInfo(id) {
+				return youtubeResource('chan_info', '1', id);
+			},
+			fetch(queryType, maxResults, query, token) {
+				return youtubeResource(queryType, maxResults, query, token);
 			},
 			addResults(vids, nextPageToken) {
 				this.allResults.push(vids.map(parseForTemplate));
@@ -490,7 +458,7 @@ $(function() {
 		}
 
 		return {
-			params: null,
+			params: {},
 			queryType: null,
 			resultsManager: null,
 			playerManager: null,
@@ -503,12 +471,18 @@ $(function() {
 				this.getTemplates();
 				this.bindEvents();
 				this.getParams();
+				this.determineQueryType();
 				this.initSettings()
-						// .then(() => this.initRequestParams())
 						.then(() => this.initResults())
 						.then(() => {
 							this.initDisplay();
 							this.initNavigationManager();
+						})
+
+						.then(() => {
+							if (this.playVidResults()) {
+								this.playQueriedVid();
+							}
 						});
 
 				return this;
@@ -516,7 +490,10 @@ $(function() {
 			getTemplates() {
 				Handlebars.registerPartial('vid_thumb_partial', $('#vid_thumb_partial').html());
 				this.thumbTemplate = Handlebars.compile($('#thumbnails_template').html());
+				this.searchHeaderTemplate = Handlebars.compile($('#search_header_template').html());
 				this.playlistHeaderTemplate = Handlebars.compile($('#playlist_header_template').html());
+				this.channelHeaderTemplate = Handlebars.compile($('#channel_header_template').html());
+				this.relatedVidsHeaderTemplate = Handlebars.compile($('#related_vids_header_template').html());
 
 				$('[type="text/handlebars-x"]').remove();
 			},
@@ -530,14 +507,28 @@ $(function() {
 				const urlParams = new URLSearchParams(window.location.search);
 
 				for (let pair of urlParams.entries()) {
-					this.params = pair;
+					this.params.name = pair[0];
+					this.params.value = pair[1];
 				}
-
-				if (this.params[0] === 'q') {
-					this.queryType = 'searchQuery';
-				} else {
-					this.queryType = 'playlistVideos';
+			},
+			determineQueryType() {
+				switch (this.params.name) {
+					case 'search_query':
+						this.queryType = 'search';
+						break;
+					case 'listId':
+						this.queryType = 'playlist';
+						break;
+					case 'vidId':
+						this.queryType = 'relatedVideos';
+						break;
+					case 'chanId':
+						this.queryType = 'channel';
+						break;
 				}
+			},
+			playVidResults() {
+				return this.queryType === 'relatedVideos';
 			},
 			initSettings() {
 				const that = this;
@@ -547,9 +538,14 @@ $(function() {
 											that.userSettings = settingsJsonToObj(response);
 										});
 			},
+			playQueriedVid() {
+				let vidId = this.params.value;
+				this.startVideo(null, vidId);
+			},
 			initResults() {
-				this.resultsManager = Object.create(ResultsManager).init(this.params[1], this.queryType, this.vidsPerPage());
-				return this.resultsManager.getResults();s
+				this.resultsManager = Object.create(ResultsManager).init(this.params.value, this.queryType, this.vidsPerPage());
+
+				return this.resultsManager.getResults();
 			},
 			initDisplay() {
 				feather.replace();
@@ -600,20 +596,53 @@ $(function() {
 				if (this.playlistResults()) {
 					this.setupPlaylistHeader();
 					return;
+				} else if (this.playVidResults()) {
+					this.setupRelatedVidsHeader();
+				} else if (this.channelResults()) {
+					this.setupChannelHeader();
+				} else {
+					this.setupSearchHeader();
 				}
-
-				$querySpan.text(this.params[1]);
 			},
 			setupPlaylistHeader() {
 				let that = this;
 
-				this.resultsManager.getPlaylistInfo(this.params[1]).then(function(data) {
-						let plHeaderHTML = that.playlistHeaderTemplate(data.items[0]);
-						$('.header_content.center').html(plHeaderHTML);
-				});
+				this.resultsManager.getPlaylistInfo(this.params.value)
+						.then(function(data) {
+							that.adjustHeaderContent(data.items[0], that.playlistHeaderTemplate);
+						});
+			},
+			setupChannelHeader() {
+				let that = this;
+
+				this.resultsManager.getChannelInfo(this.params.value)
+						.then(function(data) {
+							that.adjustHeaderContent(data.items[0], that.channelHeaderTemplate);
+						});
+			},
+			setupRelatedVidsHeader() {
+				let that = this;
+
+				this.resultsManager.getVidInfo(this.params.value)
+						.then(function(data) {
+							that.adjustHeaderContent(data.items[0], that.relatedVidsHeaderTemplate);
+						});
+			},
+			adjustHeaderContent(data, template) {
+				let title = data.title || data.snippet.title;
+				let html = template(data);
+
+				$('.header_content.center').html(html);
+				$('title').text(title);
+			},
+			setupSearchHeader() {
+				this.adjustHeaderContent({title: this.params.value}, this.searchHeaderTemplate);
 			},
 			playlistResults() {
-				return this.queryType === 'playlistVideos';
+				return this.queryType === 'playlist';
+			},
+			channelResults() {
+				return this.queryType === 'channel';
 			},
 			renderPageNumber(n) {
 				let vids = this.resultsManager.getResultPage(n);
@@ -697,8 +726,8 @@ $(function() {
 			gaInactive() {
 			 	return this.gaDisabled() || this.onGazeBreak();
 			},
-			startVideo($wrapper) {
-				let vidId = $wrapper.find('figure').data('vid_id');
+			startVideo($wrapper, vidId) {
+				vidId = vidId || $wrapper.find('figure').data('vid_id');
 
 				togglePlayerDivs();
 

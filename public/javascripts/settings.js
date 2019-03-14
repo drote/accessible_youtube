@@ -1,13 +1,3 @@
-// const DEFAULT_FORM_VALUES = {
-// 	gaze_aware: 'on',
-// 	select_delay: '10',
-// 	click_delay: '10',
-// 	row_number: '2',
-// 	col_number: '4',
-// 	background_color: '#fafafa',
-// 	select_color: '#b22222',
-// }
-
 const FAILURE_MSG = 'משהו לא הסתדר. אנא נסה שוב לאחר ריענון הדף.';
 const USER_SETTINGS_URL = '/user_settings';
 const DEFAULT_SETTINGS_URL = '/default_settings'

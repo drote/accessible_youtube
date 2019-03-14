@@ -1,7 +1,3 @@
-<% content_for :header_content_center do %>
-  <p>תוצאות עבור:</p><span id="query"></span>
-<% end %>
-
 <main>
   <section id="content"></section>
 </main>
@@ -36,9 +32,23 @@
   {{/each}}
 </script>
 
+<script type="text/handlebars-x" id="search_header_template">
+  <p>מציג תוצאות עבור:</p><span id="query">{{title}}</span>
+</script>
+
 <script type="text/handlebars-x" id="playlist_header_template">
   <img src="{{snippet.thumbnails.medium.url}}" alt="{{snippet.description}}">
   <p>{{snippet.title}}</p>
+</script>
+
+<script type="text/handlebars-x" id="channel_header_template">
+  <img src="{{snippet.thumbnails.medium.url}}" alt="{{snippet.description}}">
+  <h1>{{snippet.title}}</h1>
+</script>
+
+<script type="text/handlebars-x" id="related_vids_header_template">
+  <img src="{{snippet.thumbnails.medium.url}}" alt="{{snippet.description}}">
+  <span id="query">{{snippet.title}}</span><p>סרטונים קשורים:</p>
 </script>
 
 <script type="text/javascript" src="javascripts/temp_data.js"></script>
