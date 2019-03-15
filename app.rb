@@ -1,3 +1,5 @@
+require 'pry'
+
 require 'dotenv'
 Dotenv.load
 
@@ -84,6 +86,11 @@ def get_url(query_type)
   "#{YT_ROOT}#{YT_URLS[query_type]}"
 end
 
+use Rack::Session::Cookie, :key => "rack.session",
+                           :path => "/",
+                           :secret => ENV['SESSION_SECRET'],
+                           :expires_after => YEAR_FROM_NOW
+
 get '/' do
   redirect '/search'
 end
@@ -109,15 +116,18 @@ get '/settings' do
 end
 
 post '/settings' do
-  settings = JSON.parse(request.cookies['settings'])
-  settings.merge(params)
+  if session['settings']
+    settings = JSON.parse(session['settings'])
+    settings = settings.merge(params)
+  else
+    settings = params
+  end
 
-  response.set_cookie 'settings',
-    {:value => JSON.generate(settings), :expires => YEAR_FROM_NOW}
+  session['settings'] = JSON.generate(settings)
 end
 
 get '/user_settings' do
-  settings = request.cookies['settings'] || JSON_DS
+  settings = session['settings'] || JSON_DS
 
   settings
 end
@@ -139,7 +149,6 @@ get '/youtube_resource' do
   query_string = make_query(query_type, max_results, query_param, token)
   url = get_url(query_type)
 
-  puts "#{url}?#{query_string}"
   redirect "#{url}?#{query_string}"
 end
 
