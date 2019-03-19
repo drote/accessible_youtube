@@ -441,7 +441,9 @@ $(function() {
 					case 'chanId':
 						this.queryType = 'channel';
 						break;
-				}
+					case 'feed':
+						this.queryType = 'feed';
+				}		
 			},
 			vidIdInParams() {
 				return this.params.name === 'vidId';

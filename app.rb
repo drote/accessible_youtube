@@ -42,7 +42,7 @@ YT_FILEDS = {
   'vid_info' => 'items(snippet(title,description,thumbnails(medium(url))))',
   'chan_info' => 'items(snippet(title,description,thumbnails(medium(url))))',
   'channel' => 'nextPageToken,items(id(videoId),snippet(title,description,thumbnails(high(url))))',
-  'feed' => 'nextPageToken,items(id(snippet(title,description,thumbnails(high(url)))))',
+  'feed' => 'nextPageToken,items',
 }
 
 QUERY_PARAMS = {
