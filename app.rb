@@ -25,7 +25,7 @@ YT_ROOT = 'https://www.googleapis.com/youtube/v3'
 
 YT_URLS = {
   'search' => '/search',
-  'relatedVideos' => '/search',
+  'related_videos' => '/search',
   'playlist' => '/playlistItems',
   'playlist_info' => '/playlists',
   'vid_info' => '/videos',
@@ -35,7 +35,7 @@ YT_URLS = {
 
 YT_FILEDS = {
   'search' => 'nextPageToken,items(id(videoId),snippet(title,description,thumbnails(high)))',
-  'relatedVideos' => 'nextPageToken,items(id(videoId),snippet(title,description,thumbnails(high)))',
+  'related_videos' => 'nextPageToken,items(id(videoId),snippet(title,description,thumbnails(high)))',
   'playlist' => 'nextPageToken,items(snippet(resourceId(videoId),title,description,thumbnails(high(url))))',
   'playlist_info' => 'items(snippet(title,description,thumbnails(medium(url))))',
   'vid_info' => 'items(snippet(title,description,thumbnails(medium(url))))',
@@ -47,7 +47,6 @@ QUERY_PARAMS = {
   'part' => 'snippet',
   'maxResults' => nil,
   'fields' => nil,
-  'order' => 'viewCount',
   'key' => ENV['YT_API_KEY'],
 }
 
@@ -62,9 +61,10 @@ def make_query(query_type, max_results, query_param, token)
 
   if query_type == 'search'
     query['q'] = query_param
+    query['order'] = 'viewCount'
   elsif query_type == 'playlist'
     query['playlistId'] = query_param
-  elsif query_type == 'relatedVideos'
+  elsif query_type == 'related_videos'
     query['relatedToVideoId'] = query_param
   elsif query_type == 'channel'
     query['channelId'] = query_param
@@ -87,7 +87,7 @@ end
 use Rack::Session::Cookie, :key => "rack.session",
                            :path => "/",
                            :secret => ENV['SESSION_SECRET'],
-                           :expires_after => YEAR_FROM_NOW
+                           :expire_after => YEAR_FROM_NOW
 
 get '/' do
   redirect '/search'

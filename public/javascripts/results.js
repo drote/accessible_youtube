@@ -3,14 +3,15 @@
 $(function() {
 	// JQUERY VARIABLES
 	const $body = $(document.body);
-	const $contentDiv = $('#content');
-	const $playerModal = $('#player_modal_layer');
+	const $content = $('#content');
+	const $moreContent = $('#more_content');
 	const $playerContainer = $('#player_container');
 	const $seperator = $('#seperator');
 	const $headerP = $('header > p');
 	const $querySpan = $('#query');
 	const $logo = $('#logo');
-	const PLAYER_DIVS = [$playerContainer, $playerModal, $seperator];
+
+	const PLAYER_DIVS = [$playerContainer, $seperator];
 
 	const ajaxCall = function(url, data) {
 		return $.ajax({ url, data })
@@ -58,7 +59,7 @@ $(function() {
 		}
 
 		return {
-			allResults: [],
+			allResults: null,
 			type: null,
 			nextPageToken: null,
 
@@ -66,6 +67,7 @@ $(function() {
 				this.queryType = queryType;
 				this.maxResults = vidsPerPage;
 				this.query = encodeURI(query);
+				this.allResults = [];
 
 				return this;
 			},
@@ -116,118 +118,6 @@ $(function() {
 			}
 		};
 	})();
-
-
-	//PLAYER MANAGER
-	const PlayerManager = (function() {
-		const LOCATION_CHANGE_SEC = 10;
-		const VOLUME_CHANGE_PCENT = 5;
-
-		const keyToAction = {
-			f() { this.toggleFullScreen(); },
-			k() { this.togglePlay(); },
-			spacebar() { this.togglePlay(); },
-			m() { this.toggleMute(); },
-			left() { this.changeLocation(-LOCATION_CHANGE_SEC); },
-			right() { this.changeLocation(LOCATION_CHANGE_SEC); },
-			up() { this.changeVolume(VOLUME_CHANGE_PCENT); },
-			down() { this.changeVolume(-VOLUME_CHANGE_PCENT); },
-			enter() { return },
-		}
-
-		const requestFullscreen = (container) => {
-			let func =  container.requestFullscreen
-								  || container.webkitRequestFullScreen
-								  || container.mozRequestFullScreen
-								  || container.msRequestFullscreen;
-
-			func.call(container);
-		}
-
-		const cancelFullscreen = () => {
-			let func = document.webkitExitFullscreen
-								 || document.mozCancelFullScreen
-			 					 || document.msExitFullscreen
-			 					 || document.exitFullscreen;
-
-			func.call(document);
-		}
-
-		const isFullScreen = () => {
-			return document.mozFullScreenElement
-					   || document.msFullscreenElement
-					   || document.webkitFullscreenElement;
-		}
-
-		const zeroToHundred = (n) => {
-			if (n > 100) {
-				n = 100;
-			} else if (n < 0) {
-				n = 0;
-			}
-
-			return n;
-		}
-
-		const playerReadyEvent = () => {
-			player.playVideo();
-		}
-
-	  return {
-			init(videoId) {
-				player = new YT.Player('player', {
-				  videoId,
-				  events: {
-				  	'onReady': playerReadyEvent,
-				  },
-				});
-
-				return this;
-			},
-			toggleFullScreen() {
-				let playerContainer = $playerContainer.get(0);
-
-				if (isFullScreen()) {
-					cancelFullscreen();
-					return;
-				}
-
-				requestFullscreen(playerContainer);
-			},
-			togglePlay() {
-				let state = player.getPlayerState();
-
-				if (state === 1) {
-					player.pauseVideo();
-				} else if (state === 2) {
-					player.playVideo();
-				}
-			},
-			changeVolume(change) {
-				let newVolume = player.getVolume() + change;
-
-				player.setVolume(zeroToHundred(newVolume));
-			},
-			toggleMute() {
-				player.isMuted() ? player.unMute() : player.mute();
-			},
-			playVid(vidId) {
-				player.loadVideoById(vidId);
-			},
-			stopVid() {
-				player.stopVideo();
-			},
-			changeLocation(change) {
-				let newTime = player.getCurrentTime() + change;
-
-				player.seekTo(newTime);
-			},
-			keyHandler(key) {
-				keyToAction[key].call(this);
-			},
-		}
-	})();
-
 
 	//NAVIGATION MANAGER
 	const NavigationManager = (function() {
@@ -303,7 +193,6 @@ $(function() {
 		};
 	})();
 
-
 	//PAGE OBJECT
 	const Page = (function() {
 		const SETTINGS_URL = 'user_settings';
@@ -315,15 +204,18 @@ $(function() {
 			'40': 'down',
 		}
 
-		const navCharCodeToKey = {
+		const relatedCharCodeToKey = {
 			'13': 'enter',
-			'32': 'spacebar',
-			'33': 'pageUp',
-			'34': 'pageDown',
 			'36': 'home',
 			'71': 'g',
 			'79': 'o',
 			...arrowKeys,
+		}
+
+		const navCharCodeToKey = {
+			'33': 'pageUp',
+			'34': 'pageDown',
+			...relatedCharCodeToKey,
 		};
 
 		const playCharCodeToKey = {
@@ -338,7 +230,6 @@ $(function() {
 		let playTimeout;
 		let selectTimeout;
 		let clickTimeout;
-
 
 		Handlebars.registerHelper('shortenTitle', (title) => {
 			if (title.length > 80) {
@@ -400,8 +291,10 @@ $(function() {
 			return settings;
 		}
 
-		const togglePlayerDivs = () => {
-			PLAYER_DIVS.forEach(($div) => $div.toggle());
+		const togglePlayerAndContents = (trueFalse) => {
+			PLAYER_DIVS.forEach(($div) => $div.toggle(trueFalse));
+			$content.toggle(!trueFalse);
+			$moreContent.toggle(!trueFalse);
 		}
 
 		const navModeKeyEvent = function(key) {
@@ -420,15 +313,28 @@ $(function() {
 			this.respondToPlayKey(key);
 		}
 
+		const relatedModeKeyEvent = function(key) {
+			let keyName = relatedCharCodeToKey[key];
+
+			if (!keyName) {
+				playModeKeyEvent.call(this, key);
+				return;
+			};
+
+			this.respondToNavKey(keyName, true);
+		}
+
 		const keydownHandler = function(e) {
 			let key = String(e.which);
 
-			if (this.playMode()) {
+			if (this.relatedVidsMode()) {
+				relatedModeKeyEvent.call(this, key);
+			} else if (this.playMode()) {
 				playModeKeyEvent.call(this, key);
-				return;
+			} else {
+				navModeKeyEvent.call(this, key);
 			}
 
-			navModeKeyEvent.call(this, key);
 		}
 
 		const vidMouseIn = function(e) {
@@ -471,21 +377,31 @@ $(function() {
 				this.getTemplates();
 				this.bindEvents();
 				this.getParams();
-				this.determineQueryType();
+
+				if (this.vidIdInParams()) {
+					this.directPlayProtocol();
+				} else {
+					this.searchVidsProtocol();
+				}
+
+				return this;
+			},
+			searchVidsProtocol() {
 				this.initSettings()
 						.then(() => this.initResults())
 						.then(() => {
 							this.initDisplay();
 							this.initNavigationManager();
-						})
-
+				});
+			},
+			directPlayProtocol() {
+				feather.replace();
+				this.initSettings()
 						.then(() => {
-							if (this.playVidResults()) {
-								this.playQueriedVid();
-							}
+							this.setCSSProperties();
+						  this.playVidFromParams();
+						  this.initNavigationManager();
 						});
-
-				return this;
 			},
 			getTemplates() {
 				Handlebars.registerPartial('vid_thumb_partial', $('#vid_thumb_partial').html());
@@ -499,9 +415,12 @@ $(function() {
 			},
 			bindEvents() {
 				$body.on('keydown', keydownHandler.bind(this));
-				$contentDiv.on('mouseenter', '.wrapper', vidMouseIn.bind(this));
-				$contentDiv.on('mouseleave', '.wrapper', vidMouseOut.bind(this));
-				$contentDiv.on('click', '.wrapper', vidClick.bind(this));
+				$content.on('mouseenter', '.wrapper', vidMouseIn.bind(this));
+				$content.on('mouseleave', '.wrapper', vidMouseOut.bind(this));
+				$content.on('click', '.wrapper', vidClick.bind(this));
+				$moreContent.on('mouseenter', '.wrapper', vidMouseIn.bind(this));
+				$moreContent.on('mouseleave', '.wrapper', vidMouseOut.bind(this));
+				$moreContent.on('click', '.wrapper', vidClick.bind(this));
 			},
 			getParams() {
 				const urlParams = new URLSearchParams(window.location.search);
@@ -519,16 +438,13 @@ $(function() {
 					case 'listId':
 						this.queryType = 'playlist';
 						break;
-					case 'vidId':
-						this.queryType = 'relatedVideos';
-						break;
 					case 'chanId':
 						this.queryType = 'channel';
 						break;
 				}
 			},
-			playVidResults() {
-				return this.queryType === 'relatedVideos';
+			vidIdInParams() {
+				return this.params.name === 'vidId';
 			},
 			initSettings() {
 				const that = this;
@@ -538,11 +454,12 @@ $(function() {
 											that.userSettings = settingsJsonToObj(response);
 										});
 			},
-			playQueriedVid() {
+			playVidFromParams() {
 				let vidId = this.params.value;
 				this.startVideo(null, vidId);
 			},
 			initResults() {
+				this.determineQueryType();
 				this.resultsManager = Object.create(ResultsManager).init(this.params.value, this.queryType, this.vidsPerPage());
 
 				return this.resultsManager.getResults();
@@ -585,7 +502,7 @@ $(function() {
 				this.pushMainAndHeader(this.controlsFloat());
 			},
 			pushMainAndHeader(controlsFloat) {
-				let $mainAndHeader = $('main, header');
+				let $mainAndHeader = $('main, header, #more_content');
 				if (controlsFloat === 'right') {
 					$mainAndHeader.css('left', 0);
 				} else {
@@ -596,8 +513,8 @@ $(function() {
 				if (this.playlistResults()) {
 					this.setupPlaylistHeader();
 					return;
-				} else if (this.playVidResults()) {
-					this.setupRelatedVidsHeader();
+				// } else if (this.vidIdInParams()) {
+				// 	this.setupRelatedVidsHeader();
 				} else if (this.channelResults()) {
 					this.setupChannelHeader();
 				} else {
@@ -620,14 +537,6 @@ $(function() {
 							that.adjustHeaderContent(data.items[0], that.channelHeaderTemplate);
 						});
 			},
-			setupRelatedVidsHeader() {
-				let that = this;
-
-				this.resultsManager.getVidInfo(this.params.value)
-						.then(function(data) {
-							that.adjustHeaderContent(data.items[0], that.relatedVidsHeaderTemplate);
-						});
-			},
 			adjustHeaderContent(data, template) {
 				let title = data.title || data.snippet.title;
 				let html = template(data);
@@ -648,17 +557,17 @@ $(function() {
 				let vids = this.resultsManager.getResultPage(n);
 				let html = this.thumbTemplate({ vids }).replace('-->', '');
 
-				$contentDiv.empty();
-				$contentDiv.append(html);
+				$content.empty();
+				$content.append(html);
 
 				let rightMarginPcent = this.colNumber() === 1 ? '5%' : '2.5%';
-				$(`.wrapper:nth-of-type(${this.colNumber()}n)`).css('margin-left', '0');
-				$(`.wrapper:nth-of-type(${this.colNumber()}n + 1)`).css('margin-right', rightMarginPcent);
+				$(`.wrapper:visible:nth-of-type(${this.colNumber()}n)`).css('margin-left', '0');
+				$(`.wrapper:visible:nth-of-type(${this.colNumber()}n + 1)`).css('margin-right', rightMarginPcent);
 
 				this.currentPageNumber = n;
 			},
 			selectWrapper(idx) {
-				$('.selected').removeClass('selected');
+				$('.selected:visible').removeClass('selected');
 				let $wrapper = this.wrappers(idx);
 
 				if (empty($wrapper)) {
@@ -679,14 +588,18 @@ $(function() {
 			firstPage(page) {
 				return page === 0;
 			},
-			navigate(idx, direction) {
+			navigate(idx, direction, related) {
 				let navObj = this.navigationManager.nextIdxAndPage(idx, direction);
 				let nextIdx = navObj.nextIdx;
 				switch (navObj.page) {
 					case 'next':
+						if (related) return;
+
 						this.goToNextPage(nextIdx);
 						break;
 					case 'prev':
+						if (related) return;
+
 						this.goToPrevPage(nextIdx);
 						break;
 					default:
@@ -729,30 +642,60 @@ $(function() {
 			startVideo($wrapper, vidId) {
 				vidId = vidId || $wrapper.find('figure').data('vid_id');
 
-				togglePlayerDivs();
+				togglePlayerAndContents(true);
+				this.playVidWhenPlayerReady(vidId);
+				this.populateRelatedVids(vidId);
+			},
+			populateRelatedVids(vidId) {
+				let relatedVids = Object.create(ResultsManager).init(vidId, 'related_videos', this.vidsPerPage());
+				relatedVids.getResults()
+									 .then(() => this.displayRelatedVids(relatedVids));
+			},
+			displayRelatedVids(relatedVids) {
+				let vids = relatedVids.getResultPage(0);
+				let html = this.thumbTemplate({ vids }).replace('-->', '');
 
-				if (this.firstVideo()) {
-					this.makeNewPlayer(vidId);
-					return;
-				}
+				$moreContent.empty();
+				$moreContent.append(html);
 
-				this.playerManager.playVid(vidId);
+				$moreContent.children().eq(0).addClass('selected');
+			},
+			playVidWhenPlayerReady(vidId) {
+				setTimeout(() => {
+					if (playerReady) {
+						if (this.firstVideo()) {
+							this.assignPlayer();
+						}
+
+						this.playerManager.playVid(vidId);
+						return;
+					}
+
+					this.playVidWhenPlayerReady();
+				}, 1500);
 			},
 			firstVideo() {
 				return this.playerManager === null;
 			},
-			makeNewPlayer(vidId) {
-				this.playerManager = Object.create(PlayerManager).init(vidId);
+			assignPlayer(vidId) {
+				this.playerManager = playerManager;
+				// this.playerManager = Object.create(PlayerManager).init(vidId);
 			},
 			closePlayer() {
-				this.playerManager.stopVid();
-				togglePlayerDivs();
+				if (player.getPlayerState() === 1) {
+					this.playerManager.stopVid();
+				}
+
+				togglePlayerAndContents(false);
 			},
 			playMode() {
 				return $playerContainer.is(':visible');
 			},
+			relatedVidsMode() {
+				return $moreContent.is(':visible');
+			},
 			wrappers(n) {
-				let $wrappers = $('.wrapper');
+				let $wrappers = $('.wrapper:visible');
 
 				return n === undefined ? $wrappers : $wrappers.eq(n);
 			},
@@ -817,8 +760,8 @@ $(function() {
 			removePlayInterval() {
 				clearInterval(playTimeout);
 			},
-			respondToNavKey(key) {
-				let $selected = $('.selected');
+			respondToNavKey(key, related) {
+				let $selected = $('.selected:visible');
 				let selectedIdx = $selected.index();
 
 				switch (key) {
@@ -826,10 +769,7 @@ $(function() {
 						this.startVideo($selected);
 						break;
 					case 'home':
-						$logo.trigger('click');
-						break;
-					case 'spacebar':
-						$gaButtonIndicator.trigger('click');
+						$logo.get(0).click();
 						break;
 					case 'g':
 						this.startGazeBreak();
@@ -838,12 +778,13 @@ $(function() {
 						this.endGazeBreak();
 						break;
 					default:
-						this.navigate(selectedIdx, key);
+						this.navigate(selectedIdx, key, related);
 				}
 			},
 			respondToPlayKey(key) {
 				if (key === 'escape') {
 					this.closePlayer();
+					$moreVidsContainer.fadeOut();
 					return;
 				}
 

@@ -1,13 +1,21 @@
 <main>
   <section id="content"></section>
 </main>
+  <div id="player_container">
+    <div id="player"></div>
+  <!--   <div id="player_controls">
+    <div id="play_icon"></div>
+    <div id="pause_icon"></div>
+    <span id="current_time"></span>
+    <span id="vid_length"></span>
+  </div> -->
+  </div>
+  <div id="seperator"></div>
 
-
-<div id="player_container">
-  <div id="player"></div>
-</div>
-<div id="seperator"></div>
-
+  <div id="more_videos_container">
+    <p>סרטונים קשורים</p>
+    <div id="more_content"></div>
+  </div>
 
 <div id="controls"></div>
 
@@ -33,22 +41,34 @@
 </script>
 
 <script type="text/handlebars-x" id="search_header_template">
-  <p>מציג תוצאות עבור:</p><span id="query">{{title}}</span>
+  <p style="direction: rtl;">מציג תוצאות עבור:</p><span id="query">{{title}}</span>
 </script>
 
 <script type="text/handlebars-x" id="playlist_header_template">
   <img src="{{snippet.thumbnails.medium.url}}" alt="{{snippet.description}}">
-  <p>{{snippet.title}}</p>
+  <p 
+    {{#if (isHebrew snippet.title)}}
+      style="direction: rtl"
+    {{/if}}>
+  {{snippet.title}}</p>
 </script>
 
 <script type="text/handlebars-x" id="channel_header_template">
   <img src="{{snippet.thumbnails.medium.url}}" alt="{{snippet.description}}">
-  <h1>{{snippet.title}}</h1>
+  <h1 
+    {{#if (isHebrew snippet.title)}}
+      style="direction: rtl"
+    {{/if}}>
+  {{snippet.title}}</h1>
 </script>
 
 <script type="text/handlebars-x" id="related_vids_header_template">
   <img src="{{snippet.thumbnails.medium.url}}" alt="{{snippet.description}}">
-  <span id="query">{{snippet.title}}</span><p>סרטונים קשורים:</p>
+  <span id="query" 
+    {{#if (isHebrew snippet.title)}}
+      style="direction: rtl"
+    {{/if}}
+  >{{snippet.title}}</span><p>סרטונים קשורים:</p>
 </script>
 
 <script type="text/javascript" src="javascripts/temp_data.js"></script>

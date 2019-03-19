@@ -27,11 +27,13 @@ header {
 }
 
 h1 {
+	direction: ltr;
 	font-size: 1.5rem;
 	font-weight: bold;
 }
 
 header p {
+	direction: ltr;
 	font-size: 0.9rem;
 }
 
@@ -274,6 +276,33 @@ iframe {
 	height: 100%;
 	width: 100%;
 }
+
+/* MORE VIDEOS */
+
+#more_videos_container {
+	display: none;
+	width: 100%;
+	height: 100%;
+}
+
+#more_content {
+  background-color: #000000BF;
+  box-sizing: border-box;
+  padding: 1%;
+  height: 100%;
+  position: absolute;
+  box-shadow: inset 0 0 1px 10px black;
+  width: var(--mainAndHeaderWidth);
+  z-index: 6;
+}
+
+#more_videos_container p {
+  color: #fff;
+  width: 100%;
+  margin: 7px 20px 10px 0;
+  text-align: right;
+}
+
 
 /* SETTINGS FORM */
 
