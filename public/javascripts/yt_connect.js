@@ -13,8 +13,7 @@ function handleClientLoad() {
 
 function updateSigninStatus(isSignedIn) {
 	if (isSignedIn) {
-		$authorizeButton.hide();
-		$signoutButton.show();
+		window.location = '/results?feed'
 	} else {
 		$authorizeButton.show();
 		$signoutButton.hide();

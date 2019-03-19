@@ -28,6 +28,7 @@ YT_URLS = {
   'related_videos' => '/search',
   'playlist' => '/playlistItems',
   'playlist_info' => '/playlists',
+  'feed' => '/activities',
   'vid_info' => '/videos',
   'channel' => '/search',
   'chan_info' => '/channels'
@@ -41,6 +42,7 @@ YT_FILEDS = {
   'vid_info' => 'items(snippet(title,description,thumbnails(medium(url))))',
   'chan_info' => 'items(snippet(title,description,thumbnails(medium(url))))',
   'channel' => 'nextPageToken,items(id(videoId),snippet(title,description,thumbnails(high(url))))',
+  'feed' => 'nextPageToken,items(id(snippet(title,description,thumbnails(high(url)))))',
 }
 
 QUERY_PARAMS = {
@@ -69,11 +71,13 @@ def make_query(query_type, max_results, query_param, token)
   elsif query_type == 'channel'
     query['channelId'] = query_param
     query['order'] = 'date'
+  elsif query_type == 'feed'
+    query['mine'] = 'true'
   else
     query['id'] = query_param
   end
 
-  if !query_type.match('info')
+  if !query_type.match('info') || query_type != 'feed'
     query['type'] = 'video'
   end
 
