@@ -32,9 +32,7 @@ $(function() {
 		}
 
 		const youtubeResource = function(q_type, max_results, q_param, search_embeddable, token) {
-			let queryString = makeQueryString({ q_type, max_results, q_param, search_embeddable, token })
-
-			console.log(queryString)
+			let queryString = makeQueryString({ q_type, max_results, q_param, search_embeddable, token });
 
 			return $.ajax({
 				url: `/youtube_resource`,
@@ -578,7 +576,7 @@ $(function() {
 				let html = template(data);
 
 				$('.header_content.center').html(html);
-				$('title').text(title);
+				$('title').text(`D-Bur Tube (${title})`);
 			},
 			setupSearchHeader() {
 				this.adjustHeaderContent({title: this.params.value}, this.searchHeaderTemplate);
