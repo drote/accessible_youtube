@@ -35,7 +35,8 @@ h1 {
 header p {
 	direction: ltr;
 	font-size: 0.9rem;
-	width: 130px;
+	margin-right: 20px;
+	width: 140px;
 }
 
 .header_content {
@@ -45,7 +46,7 @@ header p {
 }
 
 .header_content.center {
-	justify-content: space-between;
+	justify-content: flex-start;
 	width: 60%;
 }
 

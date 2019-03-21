@@ -827,7 +827,7 @@ $(function() {
 					if (this.vidIdInParams()) {
 						window.location.href = '/search';
 					}
-				
+
 					return;
 				} else if (key === 'y') {
 
