@@ -72,11 +72,6 @@ const PlayerManager = (function() {
 			  	onReady: function() {
 			  		playerReady = true;
 			  	},
-			  	onStateChange: function() {
-			  		if (player.getPlayerState() === 0) {
-							$moreVidsContainer.show().children().fadeIn(500);
-			  		}
-			  	}
 			  },
 			});
 
@@ -97,10 +92,8 @@ const PlayerManager = (function() {
 
 			if (state === 1) {
 				player.pauseVideo();
-				$moreVidsContainer.show().children().fadeIn(500);
-			} else if (state === 2) {
+			} else if (state === 2 || state === -1) {
 				player.playVideo();
-				$moreVidsContainer.children().fadeOut(500, () => $moreVidsContainer.hide());
 			}
 		},
 		changeVolume(change) {

@@ -4,7 +4,7 @@ $(function() {
 	// JQUERY VARIABLES
 	const $body = $(document.body);
 	const $content = $('#content');
-	const $moreContent = $('#more_content');
+	// const $moreContent = $('#more_content');
 	const $playerContainer = $('#player_container');
 	const $seperator = $('#seperator');
 	const $headerP = $('header > p');
@@ -31,8 +31,10 @@ $(function() {
 			return encodeURI(`${params.join('&')}`);
 		}
 
-		const youtubeResource = function(q_type, max_results, q_param, token) {
-			let queryString = makeQueryString({ q_type, max_results, q_param, token })
+		const youtubeResource = function(q_type, max_results, q_param, search_embeddable, token) {
+			let queryString = makeQueryString({ q_type, max_results, q_param, search_embeddable, token })
+
+			console.log(queryString)
 
 			return $.ajax({
 				url: `/youtube_resource`,
@@ -63,10 +65,11 @@ $(function() {
 			type: null,
 			nextPageToken: null,
 
-			init(query, queryType, vidsPerPage) {
+			init(query, queryType, vidsPerPage, searchEmbeddable) {
 				this.queryType = queryType;
 				this.maxResults = vidsPerPage;
 				this.query = encodeURI(query);
+				this.searchEmbeddable = searchEmbeddable;
 				this.allResults = [];
 
 				return this;
@@ -79,7 +82,7 @@ $(function() {
 					token = this.nextPageToken;
 				}
 
-				return this.fetch(this.queryType, this.maxResults, this.query, token)
+				return this.fetch(this.queryType, this.maxResults, this.query, this.searchEmbeddable, token)
 									 .then(function(response) {
 									 	 that.addResults(response.items, response.nextPageToken);
 									 });
@@ -93,8 +96,8 @@ $(function() {
 			getChannelInfo(id) {
 				return youtubeResource('chan_info', '1', id);
 			},
-			fetch(queryType, maxResults, query, token) {
-				return youtubeResource(queryType, maxResults, query, token);
+			fetch(queryType, maxResults, query, searchEmbeddable, token) {
+				return youtubeResource(queryType, maxResults, query, searchEmbeddable, token);
 			},
 			addResults(vids, nextPageToken) {
 				this.allResults.push(vids.map(parseForTemplate));
@@ -195,7 +198,8 @@ $(function() {
 
 	//PAGE OBJECT
 	const Page = (function() {
-		const SETTINGS_URL = 'user_settings';
+		const DEFAULT_SETTINGS_URL = '/api/default_user_settings'
+		const SETTINGS_URL = '/api/user_settings/';
 
 		const arrowKeys = {
 			'37': 'left',
@@ -204,18 +208,22 @@ $(function() {
 			'40': 'down',
 		}
 
-		const relatedCharCodeToKey = {
+		// const relatedCharCodeToKey = {
+		// 	'13': 'enter',
+		// 	'36': 'home',
+		// 	'71': 'g',
+		// 	'79': 'o',
+		// 	...arrowKeys,
+		// }
+
+		const navCharCodeToKey = {
+			'33': 'pageUp',
+			'34': 'pageDown',
 			'13': 'enter',
 			'36': 'home',
 			'71': 'g',
 			'79': 'o',
 			...arrowKeys,
-		}
-
-		const navCharCodeToKey = {
-			'33': 'pageUp',
-			'34': 'pageDown',
-			...relatedCharCodeToKey,
 		};
 
 		const playCharCodeToKey = {
@@ -224,6 +232,8 @@ $(function() {
 			'70': 'f',
 			'75': 'k',
 			'77': 'm',
+			'82': 'r',
+			'89': 'y',
 			...arrowKeys,
 		};
 
@@ -294,7 +304,6 @@ $(function() {
 		const togglePlayerAndContents = (trueFalse) => {
 			PLAYER_DIVS.forEach(($div) => $div.toggle(trueFalse));
 			$content.toggle(!trueFalse);
-			$moreContent.toggle(!trueFalse);
 		}
 
 		const navModeKeyEvent = function(key) {
@@ -313,28 +322,25 @@ $(function() {
 			this.respondToPlayKey(key);
 		}
 
-		const relatedModeKeyEvent = function(key) {
-			let keyName = relatedCharCodeToKey[key];
+		// const relatedModeKeyEvent = function(key) {
+		// 	let keyName = relatedCharCodeToKey[key];
 
-			if (!keyName) {
-				playModeKeyEvent.call(this, key);
-				return;
-			};
+		// 	if (!keyName) {
+		// 		playModeKeyEvent.call(this, key);
+		// 		return;
+		// 	};
 
-			this.respondToNavKey(keyName, true);
-		}
+		// 	this.respondToNavKey(keyName, true);
+		// }
 
 		const keydownHandler = function(e) {
 			let key = String(e.which);
 
-			if (this.relatedVidsMode()) {
-				relatedModeKeyEvent.call(this, key);
-			} else if (this.playMode()) {
+			if (this.playMode()) {
 				playModeKeyEvent.call(this, key);
 			} else {
 				navModeKeyEvent.call(this, key);
 			}
-
 		}
 
 		const vidMouseIn = function(e) {
@@ -372,6 +378,7 @@ $(function() {
 			userSettings: null,
 			thumbTemplate: null,
 			gazeBreak: false,
+			openInYoutube: false,
 
 			init() {
 				this.getTemplates();
@@ -396,12 +403,13 @@ $(function() {
 			},
 			directPlayProtocol() {
 				feather.replace();
-				this.initSettings()
-						.then(() => {
-							this.setCSSProperties();
-						  this.playVidFromParams();
-						  this.initNavigationManager();
-						});
+				this.playVidFromParams();
+				// this.initSettings()
+				// 		.then(() => {
+				// 			this.setCSSProperties();
+				// 		  this.playVidFromParams();
+				// 		  this.initNavigationManager();
+				// 		});
 			},
 			getTemplates() {
 				Handlebars.registerPartial('vid_thumb_partial', $('#vid_thumb_partial').html());
@@ -418,9 +426,6 @@ $(function() {
 				$content.on('mouseenter', '.wrapper', vidMouseIn.bind(this));
 				$content.on('mouseleave', '.wrapper', vidMouseOut.bind(this));
 				$content.on('click', '.wrapper', vidClick.bind(this));
-				$moreContent.on('mouseenter', '.wrapper', vidMouseIn.bind(this));
-				$moreContent.on('mouseleave', '.wrapper', vidMouseOut.bind(this));
-				$moreContent.on('click', '.wrapper', vidClick.bind(this));
 			},
 			getParams() {
 				const urlParams = new URLSearchParams(window.location.search);
@@ -441,9 +446,12 @@ $(function() {
 					case 'chanId':
 						this.queryType = 'channel';
 						break;
-					case 'feed':
+					case 'relatedToVidId':
+						this.queryType = 'related_videos';
+						break;
+					case 'token':
 						this.queryType = 'feed';
-				}		
+				}
 			},
 			vidIdInParams() {
 				return this.params.name === 'vidId';
@@ -454,6 +462,14 @@ $(function() {
 				return this.getUserSettings()
 									 .then(function(response) {
 											that.userSettings = settingsJsonToObj(response);
+
+											if (that.userSettings['gaze_aware_rest'] === 'on') {
+												that.startGazeBreak();
+											}
+
+											if (that.userSettings['open_in_youtube'] === 'on') {
+												that.openInYoutube = true;
+											}
 										});
 			},
 			playVidFromParams() {
@@ -462,7 +478,7 @@ $(function() {
 			},
 			initResults() {
 				this.determineQueryType();
-				this.resultsManager = Object.create(ResultsManager).init(this.params.value, this.queryType, this.vidsPerPage());
+				this.resultsManager = Object.create(ResultsManager).init(this.params.value, this.queryType, this.vidsPerPage(), this.searchEmbeddable());
 
 				return this.resultsManager.getResults();
 			},
@@ -475,11 +491,21 @@ $(function() {
 				this.renderPageNumber(0);
 				this.selectWrapper(0);
 			},
+			useDefaultSettings() {
+				let that = this;
+
+				return ajaxCall(DEFAULT_SETTINGS_URL)
+							 .then(function(response) {
+							 	that.userSettings = settingsJsonToObj(response);
+							 });
+			},
 			initNavigationManager() {
 				this.navigationManager = Object.create(NavigationManager).init(this.colNumber(), this.rowNumber());
 			},
 			getUserSettings() {
-				return ajaxCall(SETTINGS_URL);
+				let userId = $('#user_id').html();
+
+				return ajaxCall(`${SETTINGS_URL}${userId}`);
 			},
 			getMoreResults() {
 				return this.resultsManager.getResults('more');
@@ -504,7 +530,7 @@ $(function() {
 				this.pushMainAndHeader(this.controlsFloat());
 			},
 			pushMainAndHeader(controlsFloat) {
-				let $mainAndHeader = $('main, header, #more_content');
+				let $mainAndHeader = $('main, header');
 				if (controlsFloat === 'right') {
 					$mainAndHeader.css('left', 0);
 				} else {
@@ -515,8 +541,8 @@ $(function() {
 				if (this.playlistResults()) {
 					this.setupPlaylistHeader();
 					return;
-				// } else if (this.vidIdInParams()) {
-				// 	this.setupRelatedVidsHeader();
+				} else if (this.relatedResults()) {
+					this.setupRelatedVidsHeader();
 				} else if (this.channelResults()) {
 					this.setupChannelHeader();
 				} else {
@@ -539,6 +565,14 @@ $(function() {
 							that.adjustHeaderContent(data.items[0], that.channelHeaderTemplate);
 						});
 			},
+			setupRelatedVidsHeader() {
+				let that = this;
+
+				this.resultsManager.getVidInfo(this.params.value)
+						.then(function(data) {
+							that.adjustHeaderContent(data.items[0], that.relatedVidsHeaderTemplate)
+						})
+			},
 			adjustHeaderContent(data, template) {
 				let title = data.title || data.snippet.title;
 				let html = template(data);
@@ -554,6 +588,9 @@ $(function() {
 			},
 			channelResults() {
 				return this.queryType === 'channel';
+			},
+			relatedResults() {
+				return this.queryType === 'related_videos';
 			},
 			renderPageNumber(n) {
 				let vids = this.resultsManager.getResultPage(n);
@@ -590,18 +627,14 @@ $(function() {
 			firstPage(page) {
 				return page === 0;
 			},
-			navigate(idx, direction, related) {
+			navigate(idx, direction) {
 				let navObj = this.navigationManager.nextIdxAndPage(idx, direction);
 				let nextIdx = navObj.nextIdx;
 				switch (navObj.page) {
 					case 'next':
-						if (related) return;
-
 						this.goToNextPage(nextIdx);
 						break;
 					case 'prev':
-						if (related) return;
-
 						this.goToPrevPage(nextIdx);
 						break;
 					default:
@@ -644,24 +677,28 @@ $(function() {
 			startVideo($wrapper, vidId) {
 				vidId = vidId || $wrapper.find('figure').data('vid_id');
 
+				if (this.openInYoutube) {
+					window.open(`https://www.youtube.com/watch?v=${vidId}`);
+					return;
+				}
+
 				togglePlayerAndContents(true);
 				this.playVidWhenPlayerReady(vidId);
-				this.populateRelatedVids(vidId);
 			},
-			populateRelatedVids(vidId) {
-				let relatedVids = Object.create(ResultsManager).init(vidId, 'related_videos', this.vidsPerPage());
-				relatedVids.getResults()
-									 .then(() => this.displayRelatedVids(relatedVids));
-			},
-			displayRelatedVids(relatedVids) {
-				let vids = relatedVids.getResultPage(0);
-				let html = this.thumbTemplate({ vids }).replace('-->', '');
+			// populateRelatedVids(vidId) {
+			// 	let relatedVids = Object.create(ResultsManager).init(vidId, 'related_videos', this.vidsPerPage());
+			// 	relatedVids.getResults()
+			// 						 .then(() => this.displayRelatedVids(relatedVids));
+			// },
+			// displayRelatedVids(relatedVids) {
+			// 	let vids = relatedVids.getResultPage(0);
+			// 	let html = this.thumbTemplate({ vids }).replace('-->', '');
 
-				$moreContent.empty();
-				$moreContent.append(html);
+			// 	$moreContent.empty();
+			// 	$moreContent.append(html);
 
-				$moreContent.children().eq(0).addClass('selected');
-			},
+			// 	$moreContent.children().eq(0).addClass('selected');
+			// },
 			playVidWhenPlayerReady(vidId) {
 				setTimeout(() => {
 					if (playerReady) {
@@ -693,11 +730,11 @@ $(function() {
 			playMode() {
 				return $playerContainer.is(':visible');
 			},
-			relatedVidsMode() {
-				return $moreContent.is(':visible');
-			},
+			// relatedVidsMode() {
+			// 	return $moreContent.is(':visible');
+			// },
 			wrappers(n) {
-				let $wrappers = $('.wrapper:visible');
+				let $wrappers = $('.wrapper');
 
 				return n === undefined ? $wrappers : $wrappers.eq(n);
 			},
@@ -762,8 +799,8 @@ $(function() {
 			removePlayInterval() {
 				clearInterval(playTimeout);
 			},
-			respondToNavKey(key, related) {
-				let $selected = $('.selected:visible');
+			respondToNavKey(key) {
+				let $selected = $('.selected');
 				let selectedIdx = $selected.index();
 
 				switch (key) {
@@ -780,13 +817,33 @@ $(function() {
 						this.endGazeBreak();
 						break;
 					default:
-						this.navigate(selectedIdx, key, related);
+						this.navigate(selectedIdx, key);
 				}
 			},
 			respondToPlayKey(key) {
 				if (key === 'escape') {
 					this.closePlayer();
-					$moreVidsContainer.fadeOut();
+
+					if (this.vidIdInParams()) {
+						window.location.href = '/search';
+					}
+				
+					return;
+				} else if (key === 'y') {
+
+					if (player.getPlayerState() === -1) {
+						let vidId = player.getVideoData()['video_id'];
+						window.open(`https://www.youtube.com/watch?v=${vidId}`);
+					}
+
+					return;
+				} else if (key === 'r') {
+
+					if (player.getPlayerState() === 2) {
+						let vidId = player.getVideoData()['video_id'];
+						window.location.href = `/results?relatedToVidId=${vidId}`;
+					}
+
 					return;
 				}
 
@@ -801,6 +858,9 @@ $(function() {
 				if (this.gaDisabled()) return;
 
 				this.gazeBreak = false;
+			},
+			searchEmbeddable() {
+				return this.userSettings['open_in_youtube'] === 'off';
 			},
 			onGazeBreak() {
 				return this.gazeBreak;

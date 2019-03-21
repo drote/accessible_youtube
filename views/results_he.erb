@@ -12,10 +12,10 @@
   </div>
   <div id="seperator"></div>
 
-  <div id="more_videos_container">
+<!--   <div id="more_videos_container">
     <p>סרטונים קשורים</p>
     <div id="more_content"></div>
-  </div>
+  </div> -->
 
 <div id="controls"></div>
 
@@ -68,8 +68,10 @@
     {{#if (isHebrew snippet.title)}}
       style="direction: rtl"
     {{/if}}
-  >{{snippet.title}}</span><p>סרטונים קשורים:</p>
+  >{{snippet.title}}</span><p style="direction: rtl">סרטונים קשורים:</p>
 </script>
+
+<script type="var" id="user_id"><%= @user_id %></script>
 
 <script type="text/javascript" src="javascripts/temp_data.js"></script>
 

@@ -1,15 +1,10 @@
-
 <main>
-  <fieldset>
-    <input type="submit" value="התחבר ליוטיוב" id="authorize-button">
-    <input type="submit" value="התנתק מיוטיוב" id="signout-button">
-  </fieldset>
+  <% content_for :header_content_center do %>
+    <h1 style="direction: rtl">מתחבר ליוטיוב...</h1>
+  <% end %>
 </main>
 
-
-
+<script type="var" id="client_id"><%= @client_id %></script>
+<script type="var" id="code"><%= @code %></script>
+<script type="var" id="client_secret"><%= @client_secret %></script>
 <script src="javascripts/yt_connect.js"></script>
-<script async defer src="https://apis.google.com/js/api.js"
-        onload="this.onload=function(){};handleClientLoad()"
-        onreadystatechange="if (this.readyState === 'complete') this.onload()">
-</script>

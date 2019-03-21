@@ -35,6 +35,7 @@ h1 {
 header p {
 	direction: ltr;
 	font-size: 0.9rem;
+	width: 130px;
 }
 
 .header_content {
@@ -44,8 +45,8 @@ header p {
 }
 
 .header_content.center {
-	justify-content: space-evenly;
-	width: 50%;
+	justify-content: space-between;
+	width: 60%;
 }
 
 .header_content.left {
@@ -74,9 +75,9 @@ header p {
 }
 
 #query {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: bold;
-  text-align: center;
+  margin-right: 10px;
   text-transform: capitalize;
 }
 

@@ -3,7 +3,7 @@
 <% end %>
 
 <main>
-  <form action="/settings" method="post" id="settings">
+  <form data-id="<%= @user_id %>" action="/api/user_settings/<%= @user_id %>" method="post" id="settings">
     <fieldset>
       <input type="reset" value="איפוס הגדרות" form="settings">
 
@@ -16,6 +16,20 @@
         </label>
         <label>
           <input type="radio" name="gaze_aware" value="off" >
+          לא
+        </label>
+        </dd>
+      </dl>
+
+      <dl>
+        <dt>מצב מנוחה במסך תוצאות</dt>
+        <dd>
+        <label>
+          <input type="radio" name="gaze_aware_rest" value="on" >
+          כן
+        </label>
+        <label>
+          <input type="radio" name="gaze_aware_rest" value="off" checked>
           לא
         </label>
         </dd>
@@ -115,6 +129,21 @@
                    id="controls_width" value="10" min="1" max="100">
         </dd>
       </dl>
+
+      <dl>
+        <dt>פתח סרטונים באתר של יוטיוב</dt>
+        <dd>
+        <label>
+          <input type="radio" name="open_in_youtube" value="on" >
+          כן
+        </label>
+        <label>
+          <input type="radio" name="open_in_youtube" value="off" checked>
+          לא
+        </label>
+        </dd>
+      </dl>
+
       <input type="submit" value="שמור">
     </fieldset>
   </form>
