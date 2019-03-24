@@ -461,7 +461,7 @@ $(function() {
 									 .then(function(response) {
 											that.userSettings = settingsJsonToObj(response);
 
-											if (that.userSettings['gaze_aware_rest'] === 'on') {
+											if (that.gaRestMode()) {
 												that.startGazeBreak();
 											}
 
@@ -682,6 +682,10 @@ $(function() {
 
 				togglePlayerAndContents(true);
 				this.playVidWhenPlayerReady(vidId);
+
+				if (this.gaRestMode()) {
+					this.startGazeBreak();
+				}
 			},
 			// populateRelatedVids(vidId) {
 			// 	let relatedVids = Object.create(ResultsManager).init(vidId, 'related_videos', this.vidsPerPage());
@@ -740,7 +744,7 @@ $(function() {
 				if (activeAnimation($elm)) return;
 
 				this.setCSSCircleWidth($elm);
-				this.createProgCricleOn($elm);
+				this.createProgCricleOn($elm)
 			},
 			setCSSCircleWidth($elm) {
 				let elmHeight = $elm.css('height');
@@ -757,7 +761,10 @@ $(function() {
 			},
 			playVidWithDelay($wrapper) {
 				let playDelay = this.gaClickTime();
-				playTimeout = setTimeout(() => { this.startVideo($wrapper) }, playDelay);
+				playTimeout = setTimeout(() => {
+					this.startVideo($wrapper);
+					this.removeProgressCircle();
+				}, playDelay);
 			},
 			clickWithDelay($elm) {
 				let clickDelay = this.gaClickTime();
@@ -809,9 +816,13 @@ $(function() {
 						$logo.get(0).click();
 						break;
 					case 'g':
+						if (this.gaDisabled()) return;
+
 						this.startGazeBreak();
 						break;
 					case 'o':
+						if (this.gaDisabled()) return;
+
 						this.endGazeBreak();
 						break;
 					default:
@@ -836,8 +847,9 @@ $(function() {
 
 					return;
 				} else if (key === 'r') {
+					let vidState = player.getPlayerState();
 
-					if (player.getPlayerState() === 2) {
+					if (vidState === 2 || vidState === 0) {
 						let vidId = player.getVideoData()['video_id'];
 						window.location.href = `/results?relatedToVidId=${vidId}`;
 					}
@@ -848,13 +860,9 @@ $(function() {
 				this.playerManager.keyHandler(key);
 			},
 			startGazeBreak() {
-				if (this.gaDisabled()) return;
-
 				this.gazeBreak = true;
 			},
 			endGazeBreak() {
-				if (this.gaDisabled()) return;
-
 				this.gazeBreak = false;
 			},
 			searchEmbeddable() {
@@ -889,6 +897,9 @@ $(function() {
 			},
 			controlsFloat() {
 				return this.userSettings['controls_location'];
+			},
+			gaRestMode() {
+				return this.userSettings['gaze_aware_rest'] === 'on';
 			},
 		};
 	})();
