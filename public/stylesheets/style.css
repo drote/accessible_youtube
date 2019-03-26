@@ -245,8 +245,8 @@ figcaption {
 
 #controls {
 	background-color: #000;
-	float: var(--controlsFloat);
-	height: 100vh;
+/*	float: var(--controlsFloat);
+*/	height: 100vh;
 	font-size: 0;
 	width: var(--controlsWidth);
 }

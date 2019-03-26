@@ -73,7 +73,7 @@ def make_query(query_type, max_results, query_param, search_embeddable, token)
   end
 
   if query_type == 'search'
-    query['q'] = query_param
+    query['q'] = CGI::escape(query_param)
     query['order'] = 'viewCount'
   elsif query_type == 'playlist'
     query['playlistId'] = query_param
