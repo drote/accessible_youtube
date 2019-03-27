@@ -10,15 +10,15 @@ require 'yaml'
 
 DEFAULT_SETTINGS = {
   gaze_aware: 'on',
-  gaze_aware_rest: 'off',
-  click_delay: '5',
-  select_delay: '15',
+  gaze_aware_rest: 'on',
+  select_delay: '5',  
+  click_delay: '15',
   col_number: '4',
   row_number: '3',
   background_color: '#c4c4c4',
   select_color: '#e89999',
-  controls_location: 'right',
-  controls_width: '10',
+  controls_location: 'left',
+  controls_width: '18',
   open_in_youtube: 'off',
 }
 

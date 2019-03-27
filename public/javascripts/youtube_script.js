@@ -118,6 +118,20 @@ const PlayerManager = (function() {
 		keyHandler(key) {
 			keyToAction[key].call(this);
 		},
+		getVidId() {
+			return player.getVideoData()['video_id'];
+		},
+		videoNotStarting() {
+			return player.getPlayerState() === -1;
+		},
+		videoStopped() {
+			let vidState = player.getPlayerState();
+			
+			return vidState === 2 || vidState === 0; 
+		},
+		videoPlaying() {
+			return player.getPlayerState() === 1;
+		},
 	}
 })();
 

@@ -76,6 +76,7 @@ header p {
 }
 
 #query {
+  direction: ltr;
   font-size: 1.1rem;
   font-weight: bold;
   margin-right: 10px;
@@ -245,8 +246,8 @@ figcaption {
 
 #controls {
 	background-color: #000;
-/*	float: var(--controlsFloat);
-*/	height: 100vh;
+	float: var(--controlsFloat);
+	height: 100vh;
 	font-size: 0;
 	width: var(--controlsWidth);
 }
