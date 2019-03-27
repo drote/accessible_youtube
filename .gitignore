@@ -4,3 +4,4 @@ public/data/users.yml
 node_modules
 package-lock.json
 package.json
+.eslintrc.js
