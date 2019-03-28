@@ -12,8 +12,8 @@ $(function() {
 	const $controlsWidthSliderInput = $('#controls_width');
 	const $sliderInputs = $('[type="range"]');
 	const $sliderVals = $('.slider_value');
-	const $clickSliderVal = $('#click_slider_value');
-	const $selectSliderVal = $('#select_slider_value');
+	const $clickSliderVal = $('#click_delay_span');
+	const $selectSliderVal = $('#select_delay_span');
 	const $rowNumberInput = $('#row_number');
 	const $colNumberInput = $('#col_number');
 	const $backgroundInput = $('[name="background_color"]');
@@ -42,7 +42,7 @@ $(function() {
 			this.changeSliderNumberValue($slider);
 		}
 
-		const radioInputChange = function(e) {
+		const radioInputChange = function() {
 			let toggleOn = $('[name="gaze_aware"]:checked').val() === 'on';
 
 			this.toggleSlideBars(toggleOn);
@@ -70,10 +70,9 @@ $(function() {
 			initForm() {
 				let settings;
 
-				this.getUserSettings()
-						.then(function(response) {
-							this.populateFormFields(response);
-						});
+				this.getUserSettings().then(function(response) {
+					this.populateFormFields(response);
+				});
 			},
 			getDefaultSettings() {
 				return this.ajax(DEFAULT_SETTINGS_URL);
@@ -125,20 +124,24 @@ $(function() {
 
 				$sliderVal.text(newVal);
 			},
-			setFormValues({ gaze_aware, gaze_aware_rest, select_delay, click_delay, row_number,
-											col_number, background_color, select_color,
-											controls_width, controls_location, open_in_youtube}) {
-				let ga_active = gaze_aware === 'on';
+			setFormValues(params) {
+				let { gaze_aware, gaze_aware_rest, select_delay, click_delay,
+								row_number, col_number, background_color, select_color,
+								controls_width, controls_location, open_in_youtube } = params;
 
 				this.setRadioInput($gazeAwareRadio, gaze_aware);
 				this.setRadioInput($controlsLocationRadio, controls_location);
-				this.setRadioInput($gazeAwareRadioRest, gaze_aware_rest)
+				this.setRadioInput($gazeAwareRadioRest, gaze_aware_rest);
 				this.setRadioInput($openInYoutubeRadio, open_in_youtube);
 				this.setSliderValues(select_delay, click_delay, controls_width);
 				this.setRowColValues(row_number, col_number);
 				this.setColorInputs(background_color, select_color);
-				this.toggleSlideBars(ga_active);
+				this.toggleSlideBars(this.gaActive(gaze_aware));
+				this.toggleGazeAwareRestRadios(this.gaActive(gaze_aware));
 				this.setSliderNumValues();
+			},
+			gaActive(ga) {
+				return ga === 'on';
 			},
 			toggleGazeAwareRestRadios(bool) {
 				$gazeAwareRadioRest.prop('disabled', !bool);
@@ -149,7 +152,7 @@ $(function() {
 				$selectSliderVal.toggle(bool);
 				$clickSliderVal.toggle(bool);
 			},
-			setRadioInput($radios, radioVal) {
+			setRadioInput($radios, radioVal = 'off') {
 				$radios.each(function() {
 					$radio = $(this);
 					$radio.prop('checked', $radio.val() === radioVal);
@@ -158,9 +161,8 @@ $(function() {
 			setRowColValues(rowN, colN) {
 				$rowNumberInput.val(rowN);
 				$colNumberInput.val(colN);
-
 			},
-			setSliderValues(selectDelay, clickDelay, controlsWidth) {
+			setSliderValues(selectDelay = 5, clickDelay = 15, controlsWidth) {
 				$selectSliderInput.val(selectDelay);
 				$clickSliderInput.val(clickDelay);
 				$controlsWidthSliderInput.val(controlsWidth);

@@ -57,16 +57,17 @@ $(function() {
 			return encodeURI(params.join('&'));
 		}
 
-		const youtubeResource = function(q_type, max_results, q_param, search_embeddable, token) {
-			let queryString = makeQueryString({ q_type, max_results, q_param, search_embeddable, token });
+		const youtubeResource = function(q_type, max_results, q_param, search_embeddable, token, thumb_size) {
+			let queryString = makeQueryString({ q_type, max_results, q_param, search_embeddable, token, thumb_size });
 
 			return $.ajax({
 				url: `/youtube_resource`,
-				data: queryString
+				data: queryString,
+				dataType: 'json',
 			});
 		}
 
-		const parseForTemplate = (vid) => {
+		const parseForTemplate = function(vid) {
 			let obj = {};
 			let vidId;
 
@@ -77,7 +78,7 @@ $(function() {
 			}
 
 			obj['id'] = vidId;
-			obj['img'] = vid.snippet.thumbnails.high.url;
+			obj['img'] = vid.snippet.thumbnails[this.thumbSize].url;
 			obj['title'] = vid.snippet.title;
 			obj['description'] = vid.snippet.description;
 
@@ -92,11 +93,12 @@ $(function() {
 			searchEmbeddable: null,
 			nextPageToken: null,
 
-			init(query, queryType, vidsPerPage, searchEmbeddable) {
+			init(query, queryType, vidsPerPage, searchEmbeddable, thumbSize) {
 				this.queryType = queryType;
 				this.maxResults = vidsPerPage;
 				this.query = query;
 				this.searchEmbeddable = searchEmbeddable;
+				this.thumbSize = thumbSize;
 				this.allResults = [];
 
 				return this;
@@ -109,7 +111,7 @@ $(function() {
 					token = this.nextPageToken;
 				}
 
-				return youtubeResource(this.queryType, this.maxResults, this.query, this.searchEmbeddable, token)
+				return youtubeResource(this.queryType, this.maxResults, this.query, this.embeddableParam(), token, this.thumbSize)
 							.then(function(response) {
 								that.addResults(response.items, response.nextPageToken);
 							});
@@ -124,7 +126,7 @@ $(function() {
 				return youtubeResource('chan_info', '1', id);
 			},
 			addResults(vids, nextPageToken) {
-				this.allResults.push(vids.map(parseForTemplate));
+				this.allResults.push(vids.map(parseForTemplate.bind(this)));
 				this.nextPageToken = nextPageToken;
 			},
 			getResultPage(n) {
@@ -141,7 +143,10 @@ $(function() {
 			},
 			outOfQuota() {
 				return this.nOfResults() >= MAX_ALLOWED_VIDEOS;
-			}
+			},
+			embeddableParam() {
+				return this.searchEmbeddable ? 'true' : 'any';
+			},
 		};
 	})();
 
@@ -227,12 +232,12 @@ $(function() {
 		const PLAY_IN_YT_URL = 'https://www.youtube.com/watch?v=';
 		let timeoutVar;
 
-		const CSS_FONT_SIZES = {
-			'5': '0.6rem',
-			'4': '0.8rem',
-			'3': '0.8rem',
-			'2': '1rem',
-			'1': '1.4rem',
+		const FONT_THUMB_SIZES = {
+			'5': {'font': '0.6rem', 'thumb': 'medium'},
+			'4': {'font': '0.8rem', 'thumb': 'medium'},
+			'3': {'font': '0.8rem', 'thumb': 'medium'},
+			'2': {'font': '1rem', 'thumb': 'high'},
+			'1': {'font': '1.4rem', 'thumb': 'high'},
 		};
 
 		const arrowKeys = {
@@ -277,7 +282,8 @@ $(function() {
 		const getAnimationLength = (delayTime) => `${delayTime / 1000}s`;
 		const getMainHeaderWidth = (controlsWidth) => `${100 - controlsWidth}%`;
 		const getCotrolsWidth = (controlsWidth) => `${controlsWidth}%`;
-		const getFontSize = (rowNum) => CSS_FONT_SIZES[rowNum];
+		const getFontSize = (rowNum) => FONT_THUMB_SIZES[rowNum]['font'];
+		const getThumbSize = (colNum) => FONT_THUMB_SIZES[colNum]['thumb'];
 		const getRightMarginPercent = (colNum) => colNum === 1 ? '5%' : '2.5%';
 
 		const settingsJsonToObj = (json) => {
@@ -438,7 +444,9 @@ $(function() {
 			},
 			initResults() {
 				this.resultsManager = Object.create(ResultsManager)
-																		.init(this.query, this.queryType, this.vidsPerPage(), this.searchEmbeddable());
+																		.init(this.query, this.queryType,
+																					this.vidsPerPage(), this.searchEmbeddable(),
+																					getThumbSize(this.colNumber()));
 
 				return this.resultsManager.getResults();
 			},
