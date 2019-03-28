@@ -36,15 +36,11 @@ $(function() {
 
 	const PLAYER_DIVS = [$playerContainer, $seperator];
 
-	// HELPER FUNCTIONS
-	const ajaxCall = function(url, data) {
-		return $.ajax({ url, data })
-						.then((data) => data);
-	}
-
 	// RESULTS MANAGER
 	const ResultsManager = (function() {
 		const MAX_ALLOWED_VIDEOS = 100;
+		const YT_RESOURCE_URL = `/youtube_resource`;
+
 		const makeQueryString = (queryParams) => {
 			let params = [];
 
@@ -61,7 +57,7 @@ $(function() {
 			let queryString = makeQueryString({ q_type, max_results, q_param, search_embeddable, token, thumb_size });
 
 			return $.ajax({
-				url: `/youtube_resource`,
+				url: YT_RESOURCE_URL,
 				data: queryString,
 				dataType: 'json',
 			});
@@ -230,6 +226,7 @@ $(function() {
 		const SETTINGS_URL = '/api/user_settings/';
 		const RELATED_VIDS_PAGE_URL = '/results?relatedToVidId=';
 		const PLAY_IN_YT_URL = 'https://www.youtube.com/watch?v=';
+		const ERROR_MSG = 'נתקלנו בבעיה. יש לרענן את הדף ולנסות שנית.'
 		let timeoutVar;
 
 		const FONT_THUMB_SIZES = {
@@ -285,6 +282,11 @@ $(function() {
 		const getFontSize = (rowNum) => FONT_THUMB_SIZES[rowNum]['font'];
 		const getThumbSize = (colNum) => FONT_THUMB_SIZES[colNum]['thumb'];
 		const getRightMarginPercent = (colNum) => colNum === 1 ? '5%' : '2.5%';
+
+		const ajaxCall = function(url, data) {
+			return $.ajax({ url, data })
+							.then((data) => data);
+		}
 
 		const settingsJsonToObj = (json) => {
 			let settings = JSON.parse(json);
@@ -378,7 +380,7 @@ $(function() {
 					this.startVidFromParams();
 					return;
 				}
-				
+
 				this.searchVidsProtocol();
 			},
 			getTemplates() {
@@ -419,7 +421,8 @@ $(function() {
 						.then(() => {
 							this.initDisplay();
 							this.initNavigationManager();
-						});
+						})
+						.fail(() => this.alertFailure());
 			},
 			initSettings() {
 				const that = this;
@@ -619,7 +622,8 @@ $(function() {
 				this.getMoreResults()
 						.then(() => {
 							this.renderPageAndSelectWrapper('next', nextIdx);
-						});
+						})
+						.fail(() => this.alertFailure());
 			},
 			renderPageAndSelectWrapper(page, idx) {
 				page === 'next' ? this.renderNextPage() : this.renderPrevPage();
@@ -784,6 +788,9 @@ $(function() {
 					this.goHome();
 				}
 			},
+			alertFailure() {
+				alert(ERROR_MSG);
+			},
 			startGazeBreak() {
 				this.gazeBreak = true;
 			},
@@ -842,7 +849,8 @@ $(function() {
 				return this.userSettings['gaze_aware_rest'] === 'on';
 			},
 			openInYoutube() {
-				return this.userSettings['open_in_youtube'] === 'on';
+				let settings = this.userSettings;
+				return settings ? settings['open_in_youtube'] === 'on' : false;
 			},
 		};
 	})();
