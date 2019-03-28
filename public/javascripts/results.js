@@ -1,46 +1,69 @@
+/*eslint-env jquery*/
+/* global Handlebars */
+/* global feather */
+/* global playerReady */
+/* global playerManager */
+
 'use strict';
+
+Handlebars.registerHelper('shortenTitle', (title) => {
+	if (title.length > 80) {
+		let newTitle = title.substring(0, 77);
+
+		return `${newTitle.replace(/ $/, '')}...`;
+	}
+
+	return title;
+});
+
+Handlebars.registerHelper('isHebrew', (title) => {
+	let charCode = title.charCodeAt(0);
+
+	return charCode > 1488 && charCode < 1514;
+});
 
 $(function() {
 	// JQUERY VARIABLES
 	const $body = $(document.body);
 	const $content = $('#content');
-	// const $moreContent = $('#more_content');
 	const $playerContainer = $('#player_container');
 	const $seperator = $('#seperator');
-	const $headerP = $('header > p');
-	const $querySpan = $('#query');
-	const $logo = $('#logo');
+	const $templates = $('[type="text/handlebars-x"]');
+	const $mainAndHeader = $('main, header');
+	const $headerContentCenter = $('.header_content.center');
+	const $title = $('title');
+	const $userId = $('#user_id');
 
 	const PLAYER_DIVS = [$playerContainer, $seperator];
-
-	const ajaxCall = function(url, data) {
-		return $.ajax({ url, data })
-						.then((data) => data);
-	}
 
 	// RESULTS MANAGER
 	const ResultsManager = (function() {
 		const MAX_ALLOWED_VIDEOS = 100;
-		const makeQueryString = (requestParams) => {
+		const YT_RESOURCE_URL = `/youtube_resource`;
+
+		const makeQueryString = (queryParams) => {
 			let params = [];
 
-			Object.keys(requestParams).forEach((prm) => {
-				params.push(`${prm}=${requestParams[prm]}`);
+			Object.keys(queryParams).forEach((param) => {
+				if (queryParams[param]) {
+					params.push(`${param}=${queryParams[param]}`);
+				}
 			});
 
-			return encodeURI(`${params.join('&')}`);
+			return encodeURI(params.join('&'));
 		}
 
-		const youtubeResource = function(q_type, max_results, q_param, search_embeddable, token) {
-			let queryString = makeQueryString({ q_type, max_results, q_param, search_embeddable, token });
+		const youtubeResource = function(q_type, max_results, q_param, search_embeddable, token, thumb_size) {
+			let queryString = makeQueryString({ q_type, max_results, q_param, search_embeddable, token, thumb_size });
 
 			return $.ajax({
-				url: `/youtube_resource`,
-				data: queryString
+				url: YT_RESOURCE_URL,
+				data: queryString,
+				dataType: 'json',
 			});
 		}
 
-		const parseForTemplate = (vid) => {
+		const parseForTemplate = function(vid) {
 			let obj = {};
 			let vidId;
 
@@ -51,7 +74,7 @@ $(function() {
 			}
 
 			obj['id'] = vidId;
-			obj['img'] = vid.snippet.thumbnails.high.url;
+			obj['img'] = vid.snippet.thumbnails[this.thumbSize].url;
 			obj['title'] = vid.snippet.title;
 			obj['description'] = vid.snippet.description;
 
@@ -60,14 +83,18 @@ $(function() {
 
 		return {
 			allResults: null,
-			type: null,
+			query: null,
+			queryType: null,
+			maxResults: null,
+			searchEmbeddable: null,
 			nextPageToken: null,
 
-			init(query, queryType, vidsPerPage, searchEmbeddable) {
+			init(query, queryType, vidsPerPage, searchEmbeddable, thumbSize) {
 				this.queryType = queryType;
 				this.maxResults = vidsPerPage;
-				this.query = encodeURI(query);
+				this.query = query;
 				this.searchEmbeddable = searchEmbeddable;
+				this.thumbSize = thumbSize;
 				this.allResults = [];
 
 				return this;
@@ -80,10 +107,10 @@ $(function() {
 					token = this.nextPageToken;
 				}
 
-				return this.fetch(this.queryType, this.maxResults, this.query, this.searchEmbeddable, token)
-									 .then(function(response) {
-									 	 that.addResults(response.items, response.nextPageToken);
-									 });
+				return youtubeResource(this.queryType, this.maxResults, this.query, this.embeddableParam(), token, this.thumbSize)
+							.then(function(response) {
+								that.addResults(response.items, response.nextPageToken);
+							});
 			},
 			getPlaylistInfo(id) {
 				return youtubeResource('playlist_info', '1', id);
@@ -94,11 +121,8 @@ $(function() {
 			getChannelInfo(id) {
 				return youtubeResource('chan_info', '1', id);
 			},
-			fetch(queryType, maxResults, query, searchEmbeddable, token) {
-				return youtubeResource(queryType, maxResults, query, searchEmbeddable, token);
-			},
 			addResults(vids, nextPageToken) {
-				this.allResults.push(vids.map(parseForTemplate));
+				this.allResults.push(vids.map(parseForTemplate.bind(this)));
 				this.nextPageToken = nextPageToken;
 			},
 			getResultPage(n) {
@@ -108,15 +132,17 @@ $(function() {
 				return this.allResults.length;
 			},
 			nOfResults() {
-				return this.allResults.map((page) => page.length)
-									 .reduce((sum, current) => sum + current);
+				return this.allResults.map((page) => page.length).reduce((sum, current) => sum + current);
 			},
 			noMoreResults() {
 				return !this.nextPageToken;
 			},
 			outOfQuota() {
 				return this.nOfResults() >= MAX_ALLOWED_VIDEOS;
-			}
+			},
+			embeddableParam() {
+				return this.searchEmbeddable ? 'true' : 'any';
+			},
 		};
 	})();
 
@@ -196,23 +222,27 @@ $(function() {
 
 	//PAGE OBJECT
 	const Page = (function() {
-		const DEFAULT_SETTINGS_URL = '/api/default_user_settings'
+		const DEFAULT_SETTINGS_URL = '/api/default_user_settings';
 		const SETTINGS_URL = '/api/user_settings/';
+		const RELATED_VIDS_PAGE_URL = '/results?relatedToVidId=';
+		const PLAY_IN_YT_URL = 'https://www.youtube.com/watch?v=';
+		const ERROR_MSG = 'נתקלנו בבעיה. יש לרענן את הדף ולנסות שנית.'
+		let timeoutVar;
+
+		const FONT_THUMB_SIZES = {
+			'5': {'font': '0.6rem', 'thumb': 'medium'},
+			'4': {'font': '0.8rem', 'thumb': 'medium'},
+			'3': {'font': '0.8rem', 'thumb': 'medium'},
+			'2': {'font': '1rem', 'thumb': 'high'},
+			'1': {'font': '1.4rem', 'thumb': 'high'},
+		};
 
 		const arrowKeys = {
 			'37': 'left',
 			'38': 'up',
 			'39': 'right',
 			'40': 'down',
-		}
-
-		// const relatedCharCodeToKey = {
-		// 	'13': 'enter',
-		// 	'36': 'home',
-		// 	'71': 'g',
-		// 	'79': 'o',
-		// 	...arrowKeys,
-		// }
+		};
 
 		const navCharCodeToKey = {
 			'33': 'pageUp',
@@ -235,52 +265,27 @@ $(function() {
 			...arrowKeys,
 		};
 
-		let playTimeout;
-		let selectTimeout;
-		let clickTimeout;
-
-		Handlebars.registerHelper('shortenTitle', (title) => {
-			if (title.length > 80) {
-				let newTitle = title.substring(0, 77);
-
-				return `${newTitle.replace(/ $/, '')}...`;
-			}
-
-			return title;
-		});
-
-		Handlebars.registerHelper('isHebrew', (title) => {
-			let charCode = title.charCodeAt(0);
-
-			return charCode > 1488 && charCode < 1514;
-		});
-
-		const directionToChange = {
-			left() { return 1; },
-			right() { return -1; },
-			up() { return -this.colNumber(); },
-			down() { return this.colNumber(); },
-			pageDown() { return this.vidsPerPage(); },
-			pageUp() { return -this.vidsPerPage(); },
+		const QUERY_TYPES = {
+			'query': 'search',
+			'listId': 'playlist',
+			'chanId': 'channel',
+			'relatedToVidId': 'related_videos',
+			'vidId': 'direct_play',
 		}
 
 		const empty = ($elm) => $elm.length === 0;
 		const activeAnimation = ($elm) => $elm.find('.progress_circle').length !== 0;
-		const getFigureHieght = (rowNum) => `${90 / rowNum}%`;
-		const getFigureWidth = (colNum) => `${90 / colNum}%`;
-		const getBackgroundColor = (color) => color;
+		const getFigSide = (div) => `${90 / div}%`;
 		const getAnimationLength = (delayTime) => `${delayTime / 1000}s`;
 		const getMainHeaderWidth = (controlsWidth) => `${100 - controlsWidth}%`;
 		const getCotrolsWidth = (controlsWidth) => `${controlsWidth}%`;
-		const getControlsFloat = (float) => float;
-		const getFontSize = (rowNum) => {
-			return {
-				'5': '0.6rem',
-				'4': '0.8rem',
-				'3': '0.8rem',
-				'2': '1rem',
-				'1': '1.4rem',
-			}[rowNum];
+		const getFontSize = (rowNum) => FONT_THUMB_SIZES[rowNum]['font'];
+		const getThumbSize = (colNum) => FONT_THUMB_SIZES[colNum]['thumb'];
+		const getRightMarginPercent = (colNum) => colNum === 1 ? '5%' : '2.5%';
+
+		const ajaxCall = function(url, data) {
+			return $.ajax({ url, data })
+							.then((data) => data);
 		}
 
 		const settingsJsonToObj = (json) => {
@@ -299,9 +304,9 @@ $(function() {
 			return settings;
 		}
 
-		const togglePlayerAndContents = (trueFalse) => {
-			PLAYER_DIVS.forEach(($div) => $div.toggle(trueFalse));
-			$content.toggle(!trueFalse);
+		const togglePlayerContent = (bool) => {
+			PLAYER_DIVS.forEach(($div) => $div.toggle(bool));
+			$content.toggle(!bool);
 		}
 
 		const navModeKeyEvent = function(key) {
@@ -320,25 +325,15 @@ $(function() {
 			this.respondToPlayKey(key);
 		}
 
-		// const relatedModeKeyEvent = function(key) {
-		// 	let keyName = relatedCharCodeToKey[key];
-
-		// 	if (!keyName) {
-		// 		playModeKeyEvent.call(this, key);
-		// 		return;
-		// 	};
-
-		// 	this.respondToNavKey(keyName, true);
-		// }
-
 		const keydownHandler = function(e) {
 			let key = String(e.which);
 
 			if (this.playMode()) {
 				playModeKeyEvent.call(this, key);
-			} else {
-				navModeKeyEvent.call(this, key);
+				return;
 			}
+
+			navModeKeyEvent.call(this, key);
 		}
 
 		const vidMouseIn = function(e) {
@@ -347,7 +342,7 @@ $(function() {
 			let $wrapper = $(e.target);
 
 			if ($wrapper.is('.selected')) {
-				this.gazePlay($wrapper);
+				this.gazeGeneric($wrapper);
 				return;
 			}
 
@@ -357,8 +352,7 @@ $(function() {
 		const vidMouseOut = function() {
 			if (this.gaInactive()) return;
 
-			this.cancelGazeSelect();
-			this.cancelGazePlay();
+			this.cancelGazeAction();
 		}
 
 		const vidClick = function(e) {
@@ -368,56 +362,41 @@ $(function() {
 		}
 
 		return {
-			params: {},
-			queryType: null,
+			templates: {},
+			query: null,
 			resultsManager: null,
 			playerManager: null,
 			navigationManager: null,
 			userSettings: null,
-			thumbTemplate: null,
+			userId: null,
 			gazeBreak: false,
-			openInYoutube: false,
 
 			init() {
 				this.getTemplates();
 				this.bindEvents();
 				this.getParams();
 
-				if (this.vidIdInParams()) {
-					this.directPlayProtocol();
-				} else {
-					this.searchVidsProtocol();
+				if (this.directPlay()) {
+					this.startVidFromParams();
+					return;
 				}
 
-				return this;
-			},
-			searchVidsProtocol() {
-				this.initSettings()
-						.then(() => this.initResults())
-						.then(() => {
-							this.initDisplay();
-							this.initNavigationManager();
-				});
-			},
-			directPlayProtocol() {
-				feather.replace();
-				this.playVidFromParams();
-				// this.initSettings()
-				// 		.then(() => {
-				// 			this.setCSSProperties();
-				// 		  this.playVidFromParams();
-				// 		  this.initNavigationManager();
-				// 		});
+				this.searchVidsProtocol();
 			},
 			getTemplates() {
-				Handlebars.registerPartial('vid_thumb_partial', $('#vid_thumb_partial').html());
-				this.thumbTemplate = Handlebars.compile($('#thumbnails_template').html());
-				this.searchHeaderTemplate = Handlebars.compile($('#search_header_template').html());
-				this.playlistHeaderTemplate = Handlebars.compile($('#playlist_header_template').html());
-				this.channelHeaderTemplate = Handlebars.compile($('#channel_header_template').html());
-				this.relatedVidsHeaderTemplate = Handlebars.compile($('#related_vids_header_template').html());
+				let that = this;
 
-				$('[type="text/handlebars-x"]').remove();
+				$templates.each(function() {
+					let $temp = $(this);
+
+					if ($temp.hasClass('partial')) {
+						Handlebars.registerPartial($temp.attr('id'), $temp.html());
+					}
+
+					that.templates[$temp.attr('id')] = Handlebars.compile($temp.html());
+				});
+
+				$templates.remove();
 			},
 			bindEvents() {
 				$body.on('keydown', keydownHandler.bind(this));
@@ -427,94 +406,74 @@ $(function() {
 			},
 			getParams() {
 				const urlParams = new URLSearchParams(window.location.search);
+				this.userId = $userId.html();
 
 				for (let pair of urlParams.entries()) {
-					this.params.name = pair[0];
-					this.params.value = pair[1];
+					this.queryType = QUERY_TYPES[pair[0]];
+					this.query = pair[1];
 				}
+
+				$userId.remove();
 			},
-			determineQueryType() {
-				switch (this.params.name) {
-					case 'search_query':
-						this.queryType = 'search';
-						break;
-					case 'listId':
-						this.queryType = 'playlist';
-						break;
-					case 'chanId':
-						this.queryType = 'channel';
-						break;
-					case 'relatedToVidId':
-						this.queryType = 'related_videos';
-						break;
-					case 'token':
-						this.queryType = 'feed';
-				}
-			},
-			vidIdInParams() {
-				return this.params.name === 'vidId';
+			searchVidsProtocol() {
+				this.initSettings()
+						.then(() => this.initResults())
+						.then(() => {
+							this.initDisplay();
+							this.initNavigationManager();
+						})
+						.fail(() => this.alertFailure());
 			},
 			initSettings() {
 				const that = this;
 
-				return this.getUserSettings()
-									 .then(function(response) {
-											that.userSettings = settingsJsonToObj(response);
-
-											if (that.gaRestMode()) {
-												that.startGazeBreak();
-											}
-
-											if (that.userSettings['open_in_youtube'] === 'on') {
-												that.openInYoutube = true;
-											}
-										});
+				return this.getUserSettings().then(function(response) {
+									that.assignSettings(response);
+									that.checkStartGazeBreak();
+								});
 			},
-			playVidFromParams() {
-				let vidId = this.params.value;
-				this.startVideo(null, vidId);
+			assignSettings(settings) {
+				this.userSettings = settingsJsonToObj(settings);
+			},
+			getUserSettings() {
+				return ajaxCall(`${SETTINGS_URL}${this.userId}`);
+			},
+			useDefaultSettings() {
+				let that = this;
+
+				return ajaxCall(DEFAULT_SETTINGS_URL).then(function(response) {
+								that.assignSettings(response);
+							});
 			},
 			initResults() {
-				this.determineQueryType();
-				this.resultsManager = Object.create(ResultsManager).init(this.params.value, this.queryType, this.vidsPerPage(), this.searchEmbeddable());
+				this.resultsManager = Object.create(ResultsManager)
+																		.init(this.query, this.queryType,
+																					this.vidsPerPage(), this.searchEmbeddable(),
+																					getThumbSize(this.colNumber()));
 
 				return this.resultsManager.getResults();
+			},
+			getMoreResults() {
+				return this.resultsManager.getResults('more');
 			},
 			initDisplay() {
 				feather.replace();
 
 				this.currentPageNumber = 0;
 				this.setCSSProperties();
+				this.pushMainAndHeader(this.controlsFloat());
 				this.initHeader();
 				this.renderPageNumber(0);
 				this.selectWrapper(0);
 			},
-			useDefaultSettings() {
-				let that = this;
-
-				return ajaxCall(DEFAULT_SETTINGS_URL)
-							 .then(function(response) {
-							 	that.userSettings = settingsJsonToObj(response);
-							 });
-			},
-			initNavigationManager() {
-				this.navigationManager = Object.create(NavigationManager).init(this.colNumber(), this.rowNumber());
-			},
-			getUserSettings() {
-				let userId = $('#user_id').html();
-
-				return ajaxCall(`${SETTINGS_URL}${userId}`);
-			},
-			getMoreResults() {
-				return this.resultsManager.getResults('more');
-			},
 			setCSSProperties() {
 				document.body.style.setProperty('--figuresPerRow', this.colNumber());
 				document.body.style.setProperty('--figuresPerCol', this.rowNumber());
+
 				$body.css({
 					overflow: 'hidden',
-					'--figureWidth': getFigureWidth(this.colNumber()),
-					'--figureHeight': getFigureHieght(this.rowNumber()),
+					'--figureWidth': getFigSide(this.colNumber()),
+					'--figureHeight': getFigSide(this.rowNumber()),
 					'--figFontSize': getFontSize(this.rowNumber()),
 					'--animationLength': getAnimationLength(this.gaClickTime()),
 					'--BGColor': this.backgroundColor(),
@@ -522,89 +481,93 @@ $(function() {
 					'--circleColor': `${this.chooserColor()}bf`,
 					'--mainAndHeaderWidth': getMainHeaderWidth(this.controlsWidth()),
 					'--controlsWidth': getCotrolsWidth(this.controlsWidth()),
-					'--controlsFloat': getControlsFloat(this.controlsFloat()),
+					'--controlsFloat': this.controlsFloat(),
 				});
-
-				this.pushMainAndHeader(this.controlsFloat());
 			},
 			pushMainAndHeader(controlsFloat) {
-				let $mainAndHeader = $('main, header');
 				if (controlsFloat === 'right') {
 					$mainAndHeader.css('left', 0);
-				} else {
-					$mainAndHeader.css('right', 0);
+					return;
 				}
+
+				$mainAndHeader.css('right', 0);
 			},
 			initHeader() {
-				if (this.playlistResults()) {
-					this.setupPlaylistHeader();
-					return;
-				} else if (this.relatedResults()) {
-					this.setupRelatedVidsHeader();
-				} else if (this.channelResults()) {
-					this.setupChannelHeader();
-				} else {
-					this.setupSearchHeader();
+				switch (this.queryType) {
+					case 'playlist':
+						this.setupPlaylistHeader();
+						break;
+					case 'channel':
+						this.setupChannelHeader();
+						break;
+					case 'related_videos':
+						this.setupRelatedVidsHeader();
+						break;
+					default:
+						this.setupSearchHeader();
 				}
 			},
+			initNavigationManager() {
+				this.navigationManager = Object.create(NavigationManager).init(this.colNumber(), this.rowNumber());
+			},
+			directPlay() {
+				return this.queryType === 'direct_play';
+			},
+			checkStartGazeBreak() {
+				if (this.gaRestMode()) this.startGazeBreak();
+			},
+			setupSearchHeader() {
+				this.adjustHeaderContent({title: this.query}, this.templates.search_header_template);
+			},
 			setupPlaylistHeader() {
-				let that = this;
+				let infoFunc = this.resultsManager.getPlaylistInfo;
+				let template = this.templates.playlist_header_template;
 
-				this.resultsManager.getPlaylistInfo(this.params.value)
-						.then(function(data) {
-							that.adjustHeaderContent(data.items[0], that.playlistHeaderTemplate);
-						});
+				this.getInfoSetHeader(infoFunc, template);
 			},
 			setupChannelHeader() {
-				let that = this;
+				let infoFunc = this.resultsManager.getChannelInfo;
+				let template = this.templates.channel_header_template;
 
-				this.resultsManager.getChannelInfo(this.params.value)
-						.then(function(data) {
-							that.adjustHeaderContent(data.items[0], that.channelHeaderTemplate);
-						});
+				this.getInfoSetHeader(infoFunc, template);
 			},
 			setupRelatedVidsHeader() {
-				let that = this;
+				let infoFunc = this.resultsManager.getVidInfo;
+				let template = this.templates.related_vids_header_template;
 
-				this.resultsManager.getVidInfo(this.params.value)
-						.then(function(data) {
-							that.adjustHeaderContent(data.items[0], that.relatedVidsHeaderTemplate)
-						})
+				this.getInfoSetHeader(infoFunc, template);
+			},
+			getInfoSetHeader(infoFunc, template) {
+				let that = this;
+				infoFunc(this.query).then(function(data) {
+					that.adjustHeaderContent(data.items[0], template);
+				});
 			},
 			adjustHeaderContent(data, template) {
 				let title = data.title || data.snippet.title;
 				let html = template(data);
 
-				$('.header_content.center').html(html);
-				$('title').text(`D-Bur Tube (${title})`);
-			},
-			setupSearchHeader() {
-				this.adjustHeaderContent({title: this.params.value}, this.searchHeaderTemplate);
-			},
-			playlistResults() {
-				return this.queryType === 'playlist';
-			},
-			channelResults() {
-				return this.queryType === 'channel';
-			},
-			relatedResults() {
-				return this.queryType === 'related_videos';
+				$headerContentCenter.html(html);
+				$title.text(`D-Bur Tube (${title})`);
 			},
 			renderPageNumber(n) {
+				this.appendResultPageContent(n);
+				this.fixWrapperMargins();
+				this.currentPageNumber = n;
+			},
+			appendResultPageContent(n) {
 				let vids = this.resultsManager.getResultPage(n);
-				let html = this.thumbTemplate({ vids }).replace('-->', '');
+				let html = this.templates.thumbnails_template({ vids }).replace('-->', '');
 
 				$content.empty();
 				$content.append(html);
-
-				let rightMarginPcent = this.colNumber() === 1 ? '5%' : '2.5%';
-				$(`.wrapper:visible:nth-of-type(${this.colNumber()}n)`).css('margin-left', '0');
-				$(`.wrapper:visible:nth-of-type(${this.colNumber()}n + 1)`).css('margin-right', rightMarginPcent);
-
-				this.currentPageNumber = n;
+			},
+			fixWrapperMargins() {
+				$(`.wrapper:nth-of-type(${this.colNumber()}n)`).css('margin-left', '0');
+				$(`.wrapper:nth-of-type(${this.colNumber()}n + 1)`).css('margin-right', getRightMarginPercent(this.colNumber()));
 			},
 			selectWrapper(idx) {
-				$('.selected:visible').removeClass('selected');
+				$('.selected').removeClass('selected');
 				let $wrapper = this.wrappers(idx);
 
 				if (empty($wrapper)) {
@@ -619,16 +582,17 @@ $(function() {
 			renderPrevPage() {
 				this.renderPageNumber(this.currentPageNumber - 1);
 			},
-			lastPage(page) {
-				return page === this.resultsManager.nOfPages() - 1;
+			lastPage() {
+				return this.currentPageNumber === this.resultsManager.nOfPages() - 1;
 			},
-			firstPage(page) {
-				return page === 0;
+			firstPage() {
+				return this.currentPageNumber === 0;
 			},
 			navigate(idx, direction) {
-				let navObj = this.navigationManager.nextIdxAndPage(idx, direction);
-				let nextIdx = navObj.nextIdx;
-				switch (navObj.page) {
+				let navNextIdxAndPage = this.navigationManager.nextIdxAndPage(idx, direction);
+				let nextIdx = navNextIdxAndPage.nextIdx;
+
+				switch (navNextIdxAndPage.page) {
 					case 'next':
 						this.goToNextPage(nextIdx);
 						break;
@@ -640,67 +604,55 @@ $(function() {
 				}
 			},
 			goToNextPage(nextIdx) {
-				if (this.lastPage(this.currentPageNumber)) {
+				if (this.lastPage()) {
 					if (this.searchOver()) return;
 
 					this.queryAndDisplayNextPage(nextIdx);
 					return;
 				}
 
-				this.renderNextPage();
-				this.selectWrapper(nextIdx);
+				this.renderPageAndSelectWrapper('next', nextIdx);
 			},
 			goToPrevPage(nextIdx) {
-				if (this.firstPage(this.currentPageNumber)) return;
+				if (this.firstPage()) return;
 
-				this.renderPrevPage();
-				this.selectWrapper(nextIdx);
+				this.renderPageAndSelectWrapper('prev', nextIdx);
 			},
 			queryAndDisplayNextPage(nextIdx) {
 				this.getMoreResults()
 						.then(() => {
-							this.renderNextPage();
-							this.selectWrapper(nextIdx);
-						});
+							this.renderPageAndSelectWrapper('next', nextIdx);
+						})
+						.fail(() => this.alertFailure());
 			},
-			searchOver() {
-				return this.resultsManager.outOfQuota() || this.resultsManager.noMoreResults();
+			renderPageAndSelectWrapper(page, idx) {
+				page === 'next' ? this.renderNextPage() : this.renderPrevPage();
+
+				this.selectWrapper(idx);
 			},
-			gaDisabled() {
-				return this.userSettings['gaze_aware'] === 'off';
-			},
-			gaInactive() {
-			 	return this.gaDisabled() || this.onGazeBreak();
+			wrappers(n) {
+				let $wrappers = $('.wrapper');
+
+				return n === undefined ? $wrappers : $wrappers.eq(n);
 			},
 			startVideo($wrapper, vidId) {
 				vidId = vidId || $wrapper.find('figure').data('vid_id');
 
-				if (this.openInYoutube) {
-					window.open(`https://www.youtube.com/watch?v=${vidId}`);
+				if (this.openInYoutube()) {
+					this.startVidInYoutube(vidId);
 					return;
 				}
 
-				togglePlayerAndContents(true);
+				togglePlayerContent(true);
 				this.playVidWhenPlayerReady(vidId);
-
-				if (this.gaRestMode()) {
-					this.startGazeBreak();
-				}
+				this.checkStartGazeBreak();
 			},
-			// populateRelatedVids(vidId) {
-			// 	let relatedVids = Object.create(ResultsManager).init(vidId, 'related_videos', this.vidsPerPage());
-			// 	relatedVids.getResults()
-			// 						 .then(() => this.displayRelatedVids(relatedVids));
-			// },
-			// displayRelatedVids(relatedVids) {
-			// 	let vids = relatedVids.getResultPage(0);
-			// 	let html = this.thumbTemplate({ vids }).replace('-->', '');
-
-			// 	$moreContent.empty();
-			// 	$moreContent.append(html);
-
-			// 	$moreContent.children().eq(0).addClass('selected');
-			// },
+			startVidFromParams() {
+				this.startVideo(null, this.query);
+			},
+			startVidInYoutube(vidId) {
+				window.open(PLAY_IN_YT_URL + vidId);
+			},
 			playVidWhenPlayerReady(vidId) {
 				setTimeout(() => {
 					if (playerReady) {
@@ -715,36 +667,50 @@ $(function() {
 					this.playVidWhenPlayerReady();
 				}, 1500);
 			},
-			firstVideo() {
-				return this.playerManager === null;
-			},
-			assignPlayer(vidId) {
-				this.playerManager = playerManager;
-				// this.playerManager = Object.create(PlayerManager).init(vidId);
-			},
 			closePlayer() {
-				if (player.getPlayerState() === 1) {
+				if (this.playerManager.videoPlaying()) {
 					this.playerManager.stopVid();
 				}
 
-				togglePlayerAndContents(false);
+				togglePlayerContent(false);
 			},
-			playMode() {
-				return $playerContainer.is(':visible');
+			assignPlayer() {
+				this.playerManager = playerManager;
 			},
-			// relatedVidsMode() {
-			// 	return $moreContent.is(':visible');
-			// },
-			wrappers(n) {
-				let $wrappers = $('.wrapper');
+			gazeGeneric($elm) {
+				this.countdownAnimate($elm);
+				this.clickWithDelay($elm);
+			},
+			gazeSelect($wrapper) {
+				let selectDelay = this.gaSelectTime();
+				let wrapperIdx = $wrapper.index();
 
-				return n === undefined ? $wrappers : $wrappers.eq(n);
+				timeoutVar = setTimeout(() => {
+					this.selectWrapper(wrapperIdx);
+					this.gazeGeneric($wrapper);
+				}, selectDelay);
+			},
+			clickWithDelay($elm) {
+				let clickDelay = this.gaClickTime();
+				timeoutVar = setTimeout(() => {
+					$elm.get(0).click();
+					this.removeProgressCircle();
+				}, clickDelay );
+			},
+			cancelGazeAction() {
+				clearInterval(timeoutVar);
+				this.removeProgressCircle();
 			},
 			countdownAnimate($elm) {
 				if (activeAnimation($elm)) return;
 
 				this.setCSSCircleWidth($elm);
 				this.createProgCricleOn($elm)
+			},
+			createProgCricleOn($elm) {
+				let $circle = $('<div>').addClass('progress_circle');
+				$elm.append($circle);
+				$circle.addClass('countdown_fill');
 			},
 			setCSSCircleWidth($elm) {
 				let elmHeight = $elm.css('height');
@@ -754,55 +720,8 @@ $(function() {
 
 				document.body.style.setProperty('--circleRadius', `${circleWidth}px`);
 			},
-			createProgCricleOn($elm) {
-				let $circle = $('<div>').addClass('progress_circle');
-				$elm.append($circle);
-				$circle.addClass('countdown_fill');
-			},
-			playVidWithDelay($wrapper) {
-				let playDelay = this.gaClickTime();
-				playTimeout = setTimeout(() => {
-					this.startVideo($wrapper);
-					this.removeProgressCircle();
-				}, playDelay);
-			},
-			clickWithDelay($elm) {
-				let clickDelay = this.gaClickTime();
-				clickTimeout = setTimeout(() => { $elm.trigger('click') }, clickDelay );
-			},
-			gazePlay($wrapper) {
-				this.countdownAnimate($wrapper);
-				this.playVidWithDelay($wrapper);
-			},
-			cancelGazePlay() {
-				this.removePlayInterval();
-				this.removeProgressCircle();
-			},
-			gazeSelect($wrapper) {
-				let selectDelay = this.gaSelectTime();
-				let wrapperIdx = $wrapper.index();
-
-				selectTimeout = setTimeout(() => {
-					this.selectWrapper(wrapperIdx);
-					this.gazePlay($wrapper);
-				}, selectDelay);
-			},
-			cancelGazeSelect() {
-				clearInterval(selectTimeout);
-			},
-			gazeGeneric($elm) {
-				this.countdownAnimate($elm);
-				this.clickWithDelay($elm);
-			},
-			cancelGazeGeneric($elm) {
-				this.removeProgressCircle();
-				clearInterval(clickTimeout);
-			},
 			removeProgressCircle() {
 				$('.progress_circle').stop(true, false).remove();
-			},
-			removePlayInterval() {
-				clearInterval(playTimeout);
 			},
 			respondToNavKey(key) {
 				let $selected = $('.selected');
@@ -813,7 +732,7 @@ $(function() {
 						this.startVideo($selected);
 						break;
 					case 'home':
-						$logo.get(0).click();
+						this.goHome();
 						break;
 					case 'g':
 						if (this.gaDisabled()) return;
@@ -830,34 +749,47 @@ $(function() {
 				}
 			},
 			respondToPlayKey(key) {
-				if (key === 'escape') {
-					this.closePlayer();
-
-					if (this.vidIdInParams()) {
-						window.location.href = '/search';
-					}
-
-					return;
-				} else if (key === 'y') {
-
-					if (player.getPlayerState() === -1) {
-						let vidId = player.getVideoData()['video_id'];
-						window.open(`https://www.youtube.com/watch?v=${vidId}`);
-					}
-
-					return;
-				} else if (key === 'r') {
-					let vidState = player.getPlayerState();
-
-					if (vidState === 2 || vidState === 0) {
-						let vidId = player.getVideoData()['video_id'];
-						window.location.href = `/results?relatedToVidId=${vidId}`;
-					}
-
-					return;
+				switch(key) {
+					case 'escape':
+						this.escapePlayProtocol();
+						break;
+					case 'y':
+						this.yPlayProtocol();
+						break;
+					case 'r':
+						this.rPlayProtocol();
+						break
+					default:
+						this.playerManager.keyHandler(key);
 				}
+			},
+			yPlayProtocol() {
+				if (this.playerManager.videoNotStarting()) {
+					let vidId = this.playerManager.getVidId();
+					this.startVidInYoutube(vidId);
+				}
+			},
+			rPlayProtocol() {
+				if (this.playerManager.videoStopped()) {
+					let vidId = this.playerManager.getVidId();
+					this.goToRelatedVideosPage(vidId);
+				}
+			},
+			goHome() {
+				window.location.href = '/search';
+			},
+			goToRelatedVideosPage(id) {
+				window.location.href = RELATED_VIDS_PAGE_URL + id;
+			},
+			escapePlayProtocol() {
+				this.closePlayer();
 
-				this.playerManager.keyHandler(key);
+				if (this.directPlay()) {
+					this.goHome();
+				}
+			},
+			alertFailure() {
+				alert(ERROR_MSG);
 			},
 			startGazeBreak() {
 				this.gazeBreak = true;
@@ -865,14 +797,29 @@ $(function() {
 			endGazeBreak() {
 				this.gazeBreak = false;
 			},
-			searchEmbeddable() {
-				return this.userSettings['open_in_youtube'] === 'off';
+			searchOver() {
+				return this.resultsManager.outOfQuota() || this.resultsManager.noMoreResults();
+			},
+			gaInactive() {
+				return this.gaDisabled() || this.onGazeBreak();
+			},
+			firstVideo() {
+				return this.playerManager === null;
+			},
+			playMode() {
+				return $playerContainer.is(':visible');
 			},
 			onGazeBreak() {
 				return this.gazeBreak;
 			},
 			vidsPerPage() {
 				return this.colNumber() * this.rowNumber();
+			},
+			gaDisabled() {
+				return this.userSettings['gaze_aware'] === 'off';
+			},
+			searchEmbeddable() {
+				return this.userSettings['open_in_youtube'] === 'off';
 			},
 			colNumber() {
 				return this.userSettings['col_number'];
@@ -900,6 +847,10 @@ $(function() {
 			},
 			gaRestMode() {
 				return this.userSettings['gaze_aware_rest'] === 'on';
+			},
+			openInYoutube() {
+				let settings = this.userSettings;
+				return settings ? settings['open_in_youtube'] === 'on' : false;
 			},
 		};
 	})();

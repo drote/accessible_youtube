@@ -1,27 +1,50 @@
 let playerManager;
 let playerReady;
-var tag = document.createElement('script');
-var player;
-const $moreVidsContainer = $('#more_videos_container');
+let player;
 
+let tag = document.createElement('script');
 tag.src = "https://www.youtube.com/iframe_api";
-var firstScriptTag = document.getElementsByTagName('script')[0];
+
+let firstScriptTag = document.getElementsByTagName('script')[0];
 firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
 const PlayerManager = (function() {
 	const LOCATION_CHANGE_SEC = 10;
 	const VOLUME_CHANGE_PCENT = 5;
+	const VIDSTAT_UNSTARTED = -1;
+	const VIDSTAT_ENDED = 0;
+	const VIDSTAT_PLAYING = 1;
+	const VIDSTAT_PAUSED = 2;
+	const VIDSTAT_CUED = 5;
 
 	const keyToAction = {
-		f() { this.toggleFullScreen(); },
-		k() { this.togglePlay(); },
-		spacebar() { this.togglePlay(); },
-		m() { this.toggleMute(); },
-		left() { this.changeLocation(-LOCATION_CHANGE_SEC); },
-		right() { this.changeLocation(LOCATION_CHANGE_SEC); },
-		up() { this.changeVolume(VOLUME_CHANGE_PCENT); },
-		down() { this.changeVolume(-VOLUME_CHANGE_PCENT); },
-		enter() { return },
+		f() {
+			this.toggleFullScreen();
+		},
+		k() {
+			this.togglePlay();
+		},
+		spacebar() {
+			this.togglePlay();
+		},
+		m() {
+			this.toggleMute();
+		},
+		left() {
+			this.changeLocation(-LOCATION_CHANGE_SEC);
+		},
+		right() {
+			this.changeLocation(LOCATION_CHANGE_SEC);
+		},
+		up() {
+			this.changeVolume(VOLUME_CHANGE_PCENT);
+		},
+		down() {
+			this.changeVolume(-VOLUME_CHANGE_PCENT);
+		},
+		enter() {
+			return
+		},
 	}
 
 	const requestFullscreen = (container) => {
@@ -58,12 +81,8 @@ const PlayerManager = (function() {
 		return n;
 	}
 
-	// const playerReadyEvent = () => {
-	// 	player.playVideo();
-	// }
-
   return {
-		init(videoId) {
+		init() {
 			player = new YT.Player('player', {
 			  playerVars: {
 			  	controls: '0',
@@ -88,11 +107,9 @@ const PlayerManager = (function() {
 			requestFullscreen(playerContainer);
 		},
 		togglePlay() {
-			let state = player.getPlayerState();
-
-			if (state === 1) {
+			if (this.videoPlaying()) {
 				player.pauseVideo();
-			} else if (state === 2 || state === -1) {
+			} else if (this.videoStopped()) {
 				player.playVideo();
 			}
 		},
@@ -117,6 +134,22 @@ const PlayerManager = (function() {
 		},
 		keyHandler(key) {
 			keyToAction[key].call(this);
+		},
+		getVidId() {
+			return player.getVideoData()['video_id'];
+		},
+		videoNotStarting() {
+			return player.getPlayerState() === VIDSTAT_UNSTARTED;
+		},
+		videoStopped() {
+			let vidState = player.getPlayerState();
+			
+			return vidState === VIDSTAT_PAUSED 
+						|| vidState === VIDSTAT_ENDED
+						|| vidState === VIDSTAT_CUED; 
+		},
+		videoPlaying() {
+			return player.getPlayerState() === VIDSTAT_PLAYING;
 		},
 	}
 })();
