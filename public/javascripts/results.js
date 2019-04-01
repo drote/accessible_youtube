@@ -33,7 +33,7 @@ $(function() {
 	const $headerContentCenter = $('.header_content.center');
 	const $title = $('title');
 	const $userId = $('#user_id');
-
+	const $controlsContainer = $('#controls');
 	const PLAYER_DIVS = [$playerContainer, $seperator];
 
 	// RESULTS MANAGER
@@ -282,6 +282,8 @@ $(function() {
 		const getFontSize = (rowNum) => FONT_THUMB_SIZES[rowNum]['font'];
 		const getThumbSize = (colNum) => FONT_THUMB_SIZES[colNum]['thumb'];
 		const getRightMarginPercent = (colNum) => colNum === 1 ? '5%' : '2.5%';
+		const getControlsFontSize = (controlsWidth) => controlsWidth < 11 ? '1rem' : '1.8rem';
+		const getControlBGSize = (controlsWidth) => controlsWidth < 11 ? '70%' : 'calc(70vh / 4)';
 
 		const ajaxCall = function(url, data) {
 			return $.ajax({ url, data })
@@ -349,7 +351,15 @@ $(function() {
 			this.gazeSelect($wrapper);
 		}
 
-		const vidMouseOut = function() {
+		const mouseInGeneric = function(e) {
+			if (this.gaInactive()) return;
+
+			let $elm = $(e.currentTarget);
+
+			this.gazeGeneric($elm);
+		}
+
+		const mouseOutGeneric = function(e) {
 			if (this.gaInactive()) return;
 
 			this.cancelGazeAction();
@@ -359,6 +369,12 @@ $(function() {
 			let $wrapper = $(e.currentTarget);
 
 			this.startVideo($wrapper);
+		}
+
+		const gaToggleClick = function() {
+			let key = this.onGazeBreak() ? 'o' : 'g';
+
+			this.respondToNavKey(key);
 		}
 
 		return {
@@ -400,9 +416,19 @@ $(function() {
 			},
 			bindEvents() {
 				$body.on('keydown', keydownHandler.bind(this));
+				$body.on('mouseenter', '.clickable', mouseInGeneric.bind(this));
+				$body.on('mouseleave', '.clickable, .wrapper', mouseOutGeneric.bind(this));
+				$body.on('click', '.clickable', this.cancelGazeAction.bind(this));
 				$content.on('mouseenter', '.wrapper', vidMouseIn.bind(this));
-				$content.on('mouseleave', '.wrapper', vidMouseOut.bind(this));
+				// $content.on('mouseleave', '.wrapper', vidMouseOut.bind(this));
 				$content.on('click', '.wrapper', vidClick.bind(this));
+				$controlsContainer.on('click', '#new_search', this.goHome);
+				$controlsContainer.on('click', '#pg_up', () => this.respondToNavKey('pageUp'));
+				$controlsContainer.on('click', '#pg_down', () => this.respondToNavKey('pageDown'));
+				$controlsContainer.on('click', '#ga_break_toggle', gaToggleClick.bind(this));
+				$controlsContainer.on('click', '#play_toggle', () => this.respondToPlayKey('k'));
+				$controlsContainer.on('click', '#related_videos', () => this.respondToPlayKey('r'));
+				$controlsContainer.on('click', '#exit', () => this.respondToPlayKey('escape'));
 			},
 			getParams() {
 				const urlParams = new URLSearchParams(window.location.search);
@@ -421,6 +447,7 @@ $(function() {
 						.then(() => {
 							this.initDisplay();
 							this.initNavigationManager();
+							this.checkStartGazeBreak();
 						})
 						.fail(() => this.alertFailure());
 			},
@@ -429,7 +456,6 @@ $(function() {
 
 				return this.getUserSettings().then(function(response) {
 									that.assignSettings(response);
-									that.checkStartGazeBreak();
 								});
 			},
 			assignSettings(settings) {
@@ -465,6 +491,10 @@ $(function() {
 				this.initHeader();
 				this.renderPageNumber(0);
 				this.selectWrapper(0);
+
+				if (this.showControls()) {
+					this.initNavControls();
+				}
 			},
 			setCSSProperties() {
 				document.body.style.setProperty('--figuresPerRow', this.colNumber());
@@ -482,6 +512,8 @@ $(function() {
 					'--mainAndHeaderWidth': getMainHeaderWidth(this.controlsWidth()),
 					'--controlsWidth': getCotrolsWidth(this.controlsWidth()),
 					'--controlsFloat': this.controlsFloat(),
+					'--controlsFont': getControlsFontSize(this.controlsWidth()),
+					'--controlsBGSize': getControlBGSize(this.controlsWidth()),
 				});
 			},
 			pushMainAndHeader(controlsFloat) {
@@ -549,6 +581,48 @@ $(function() {
 
 				$headerContentCenter.html(html);
 				$title.text(`D-Bur Tube (${title})`);
+			},
+			initNavControls() {
+				let gaButton = this.templates.ga_break_button_template();
+				$controlsContainer.append(gaButton);
+
+				this.renderNavControls();
+				this.adjustGaRestButton();
+			},
+			renderNavControls() {
+				let html = this.templates.nav_controls_template();
+				$controlsContainer.children('.play_control').remove();
+				$controlsContainer.append(html);
+
+				setTimeout(() => {
+					this.enableButtons($('.nav_control'));
+				}, 1000);
+			},
+			renderPlayControls() {
+				let html = this.templates.play_controls_template();
+				$controlsContainer.children('.nav_control').remove();
+				$controlsContainer.append(html);
+
+				setTimeout(() => {
+					this.enableButtons($('.play_control'));
+				}, 1000);
+			},
+			enableButtons($buttons) {
+				$buttons.addClass('clickable');
+			},
+			adjustGaRestButton() {
+				let $button = $('#ga_break_toggle');
+
+				if (!this.gaRestMode()) {
+					$button.find('p').text('התחל מצב מנוחה');
+					return;
+				}
+
+				$button.addClass('rest_mode');
+			},
+			togglePlaybuttonToPlaying() {
+				let $button = $('#play_toggle');
+				$button.addClass('playing');
 			},
 			renderPageNumber(n) {
 				this.appendResultPageContent(n);
@@ -619,9 +693,19 @@ $(function() {
 				this.renderPageAndSelectWrapper('prev', nextIdx);
 			},
 			queryAndDisplayNextPage(nextIdx) {
+				let gazeActive = !this.onGazeBreak();
+
+				if (gazeActive) {
+					this.startGazeBreak();
+				}
+
 				this.getMoreResults()
 						.then(() => {
 							this.renderPageAndSelectWrapper('next', nextIdx);
+
+							if (gazeActive) {
+								this.endGazeBreak();
+							}
 						})
 						.fail(() => this.alertFailure());
 			},
@@ -644,6 +728,10 @@ $(function() {
 				}
 
 				togglePlayerContent(true);
+				if (this.showControls()) {
+					this.renderPlayControls();
+				}
+
 				this.playVidWhenPlayerReady(vidId);
 				this.checkStartGazeBreak();
 			},
@@ -673,6 +761,7 @@ $(function() {
 				}
 
 				togglePlayerContent(false);
+				this.renderNavControls();
 			},
 			assignPlayer() {
 				this.playerManager = playerManager;
@@ -694,9 +783,19 @@ $(function() {
 				let clickDelay = this.gaClickTime();
 				timeoutVar = setTimeout(() => {
 					$elm.get(0).click();
+
 					this.removeProgressCircle();
+					$elm.removeClass('clickable');
+					setTimeout(() => $elm.addClass('clickable'), 1000);
 				}, clickDelay );
 			},
+			// pauseGaForBuffer() {
+			// 	this.startGazeBreak();
+
+			// 	if (!this.gaRestMode()) {
+			// 		setTimeout(this.endGazeBreak.bind(this), 1000);
+			// 	}
+			// },
 			cancelGazeAction() {
 				clearInterval(timeoutVar);
 				this.removeProgressCircle();
@@ -791,11 +890,58 @@ $(function() {
 			alertFailure() {
 				alert(ERROR_MSG);
 			},
+			toggleGaBreakButton() {
+				let $button = $('#ga_break_toggle');
+				let onBreak = this.onGazeBreak();
+
+				if (this.gaRestMode()) {
+					this.restModeGAButtonToggle($button, onBreak);
+					return;
+				}
+
+				this.gaButtonToggle($button, onBreak);
+			},
+			restModeGAButtonToggle($button, onBreak) {
+				let $buttonP = $button.find('p');
+
+				if (onBreak) {
+					$buttonP.text('לא לראות');
+					$button.addClass('active');
+					return;
+				}
+
+				$buttonP.text('לראות');
+				$button.removeClass('active');
+			},
+			gaButtonToggle($button, onBreak) {
+				let $buttonP = $button.find('p');
+
+				if (onBreak) {
+					$buttonP.text('התחל מצב מנוחה');
+					$button.removeClass('active');
+					return;
+				}
+
+				$buttonP.text('הפסק מצב מנוחה');
+				$button.addClass('active');
+			},
 			startGazeBreak() {
+				if (this.gazeBreak === true) return;
+
+				if (this.showControls()) {
+					this.toggleGaBreakButton();
+				}
+
 				this.gazeBreak = true;
 			},
 			endGazeBreak() {
+				if (this.gazeBreak === false) return;
+				if (this.showControls()) {
+					this.toggleGaBreakButton();
+				}
+				
 				this.gazeBreak = false;
+
 			},
 			searchOver() {
 				return this.resultsManager.outOfQuota() || this.resultsManager.noMoreResults();
@@ -851,6 +997,9 @@ $(function() {
 			openInYoutube() {
 				let settings = this.userSettings;
 				return settings ? settings['open_in_youtube'] === 'on' : false;
+			},
+			showControls() {
+				return this.userSettings['show_controls'] === 'on';
 			},
 		};
 	})();

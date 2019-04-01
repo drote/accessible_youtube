@@ -21,7 +21,8 @@ DEFAULT_SETTINGS = {
   select_color: '#e89999',
   controls_location: 'left',
   controls_width: '18',
-  open_in_youtube: 'off'
+  open_in_youtube: 'off',
+  show_controls: 'off',
 }.freeze
 
 YEAR_FROM_NOW = Time.now + (3600 * 24 * 365)

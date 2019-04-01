@@ -83,7 +83,6 @@ header p {
   text-transform: capitalize;
 }
 
-
 #logo {
 	background-image: url(../data/icons/dbur_logo.png);
 	background-repeat: no-repeat;
@@ -244,22 +243,118 @@ figcaption {
     animation-timing-function: linear;
 }
 
+/* CONTROLS */
 #controls {
+	align-content: space-around;
 	background-color: #000;
+	display: flex;
+	flex-wrap: wrap;
 	float: var(--controlsFloat);
 	height: 100vh;
 	font-size: 0;
 	width: var(--controlsWidth);
 }
 
-/* YOUTUBE PLAYER */
+#controls > .button {
+	color: #fff;
+	height: calc(95% / 4);
+	margin: 0 auto;
+	width: 95%;
+	background-size: var(--controlsBGSize);  
+	background-position: center 5px;	
+  background-repeat: no-repeat;
+  position: relative;
+}
 
+.clickable {
+	cursor: pointer;
+}
+
+.button > p {
+	font-size: var(--controlsFont);
+	position: absolute;
+	bottom: 3%;
+	text-align: center;
+	width: 100%;
+}
+
+#new_search,
+#play_toggle.playing,
+#exit {
+	background-color: #f2453c;
+}
+
+#pg_up,
+#pg_down,
+#play_toggle {
+	background-color: #409322;
+}
+
+#new_search {
+	background-image: url('../data/icons/search.svg');
+}
+
+#pg_up {
+  background-image: url('../data/icons/arrow-up.svg');
+}
+
+#pg_down {
+  background-image: url('../data/icons/arrow-down.svg');
+}
+
+#ga_break_toggle {
+	background-color: #bc9742;
+	background-image: url('../data/icons/eye-off.svg');
+}
+
+#ga_break_toggle.active {
+	background-image: url('../data/icons/eye.svg');
+	background-color: #bc9742BF;
+}
+
+#ga_break_toggle.rest_mode {
+	background-image: url('../data/icons/eye.svg');
+	background-color: #bc9742BF;
+}
+
+#ga_break_toggle.rest_mode.active {
+	background-image: url('../data/icons/eye-off.svg');
+	background-color: #bc9742;
+}
+
+#play_toggle {
+	background-image: url('../data/icons/play.svg');
+}
+
+#play_toggle.playing {
+	background-image: url('../data/icons/pause.svg');
+}
+
+#exit {
+	background-image: url('../data/icons/x.svg');
+}
+
+#related_videos {
+	background-image: url('../data/icons/video.svg');
+	background-color: orange;
+}
+
+#related_videos:not(.clickable)::after {
+	content: "";
+	display: inline-block;
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	background: repeating-linear-gradient(90deg, #ccccccbf, #ccccccbf 30px, #dbdbdbbf 30px, #dbdbdbbf 60px);
+}	
+
+/* YOUTUBE PLAYER */
 #player_container {
 	display: none;
 	height: 100vh;
 	left: 0;
 	position: fixed;
-	top: 0;
+	top: -75px;
 	width: 100%;
 	z-index: 3;
 }
@@ -279,33 +374,6 @@ iframe {
 	height: 100%;
 	width: 100%;
 }
-
-/* MORE VIDEOS */
-
-#more_videos_container {
-	display: none;
-	width: 100%;
-	height: 100%;
-}
-
-#more_content {
-  background-color: #000000BF;
-  box-sizing: border-box;
-  padding: 1%;
-  height: 100%;
-  position: absolute;
-  box-shadow: inset 0 0 1px 10px black;
-  width: var(--mainAndHeaderWidth);
-  z-index: 6;
-}
-
-#more_videos_container p {
-  color: #fff;
-  width: 100%;
-  margin: 7px 20px 10px 0;
-  text-align: right;
-}
-
 
 /* SETTINGS FORM */
 

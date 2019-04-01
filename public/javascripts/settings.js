@@ -20,6 +20,7 @@ $(function() {
 	const $selectColorInput = $('[name="select_color"]');
 	const $resetButton = $('[type="reset"]');
 	const $controlsLocationRadio = $('[name="controls_location"]');
+	const $showControlsRadio = $('[name=show_controls]');
 
 	const Page = (function() {
 		const formToJson = ($form) => {
@@ -127,12 +128,13 @@ $(function() {
 			setFormValues(params) {
 				let { gaze_aware, gaze_aware_rest, select_delay, click_delay,
 								row_number, col_number, background_color, select_color,
-								controls_width, controls_location, open_in_youtube } = params;
+								controls_width, controls_location, open_in_youtube, show_controls } = params;
 
 				this.setRadioInput($gazeAwareRadio, gaze_aware);
 				this.setRadioInput($controlsLocationRadio, controls_location);
 				this.setRadioInput($gazeAwareRadioRest, gaze_aware_rest);
 				this.setRadioInput($openInYoutubeRadio, open_in_youtube);
+				this.setRadioInput($showControlsRadio, show_controls);
 				this.setSliderValues(select_delay, click_delay, controls_width);
 				this.setRowColValues(row_number, col_number);
 				this.setColorInputs(background_color, select_color);

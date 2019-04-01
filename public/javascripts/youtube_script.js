@@ -91,6 +91,24 @@ const PlayerManager = (function() {
 			  	onReady: function() {
 			  		playerReady = true;
 			  	},
+			  	onStateChange: function(player) {
+			  		$playButton = $('#play_toggle');
+			  		$relatedButton = $('#related_videos');
+
+			  		if ($playButton.length === 0) return;
+
+			  		switch (player.data) {
+			  			case VIDSTAT_PLAYING:
+			  				$playButton.addClass('playing');
+			  				$playButton.find('p').text('הפסק');
+			  				$relatedButton.removeClass('clickable');
+			  				break;
+			  			default:
+			  				$playButton.removeClass('playing');
+			  				$playButton.find('p').text('נגן');
+			  				$relatedButton.addClass('clickable');
+			  		}
+			  	},
 			  },
 			});
 
@@ -150,6 +168,9 @@ const PlayerManager = (function() {
 		},
 		videoPlaying() {
 			return player.getPlayerState() === VIDSTAT_PLAYING;
+		},
+		playControlExists() {
+			return $('#play_toggle').length !== 0;
 		},
 	}
 })();

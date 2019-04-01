@@ -1,21 +1,13 @@
 <main>
+
   <section id="content"></section>
-</main>
+
   <div id="player_container">
     <div id="player"></div>
-  <!--   <div id="player_controls">
-    <div id="play_icon"></div>
-    <div id="pause_icon"></div>
-    <span id="current_time"></span>
-    <span id="vid_length"></span>
-  </div> -->
   </div>
   <div id="seperator"></div>
 
-<!--   <div id="more_videos_container">
-    <p>סרטונים קשורים</p>
-    <div id="more_content"></div>
-  </div> -->
+</main>
 
 <div id="controls"></div>
 
@@ -71,11 +63,40 @@
   >{{snippet.title}}</span><p style="direction: rtl">סרטונים קשורים:</p>
 </script>
 
+<script type="text/handlebars-x" id="ga_break_button_template">
+  <div class="button clickable" id="ga_break_toggle">
+    <p>לראות</p>
+  </div>    
+</script>
+
+<script type="text/handlebars-x" id="nav_controls_template">
+  <div class="button nav_control" id="new_search">
+    <p>חיפוש חדש</p>
+  </div>
+
+  <div class="button nav_control" id="pg_up">
+    <p>סרטונים קודמים</p>
+  </div>
+
+  <div class="button nav_control" id="pg_down">
+    <p>סרטונים נוספים</p>
+  </div>
+</script>
+
+<script type="text/handlebars-x" id="play_controls_template">
+  <div class="button play_control" id="play_toggle">
+    <p>נגן</p>
+  </div>
+
+  <div class="button play_control" id="exit">
+    <p>יציאה</p>
+  </div>
+
+  <div class="button play_control" id="related_videos">
+    <p>סרטונים קשורים</p>
+  </div>
+</script>
+
 <script type="var" id="user_id"><%= @user_id %></script>
-
-<script type="text/javascript" src="javascripts/temp_data.js"></script>
-
 <script type="text/javascript" src="javascripts/youtube_script.js"></script>
-
 <script type="text/javascript" src="javascripts/results.js"></script>
-
