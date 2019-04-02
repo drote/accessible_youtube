@@ -166,6 +166,13 @@ get '/settings' do
   erb :settings_he
 end
 
+get '/feed_edit' do
+  @title = 'עריכת דף בית'
+  @user_id = request.cookies['id']
+
+  erb :feed_edit_he
+end
+
 post '/api/user_settings/:user_id' do
   user_id = params[:user_id].to_i
   settings_hash = Rack::Utils.parse_nested_query(request.body.read)
