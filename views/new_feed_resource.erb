@@ -1,0 +1,20 @@
+<div id="fields"></div>
+
+<script type="text/handlebars-x" id="type_selection_template">
+  <p>סוג</p>
+  <a href="#" class="type" data-type="search">חיפוש</a>
+  <a href="#" class="type" data-type="playlist">רשימה</a>
+  <a href="#" class="type" data-type="channel">ערוץ</a>
+  <a href="#" class="type" data-type="video">סרטון</a>
+</script>
+
+<script type="text/handlebars-x" id="resource_selection_template">
+  <a href="/feed_resource_form">חזרה</a>
+  <label for="resource">{{ label }}</label>
+  <input type="text" name="resource">
+  <a href="/" id="select_resource">המשך</a>
+</script>
+
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.1.0/handlebars.js"></script>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script type="text/javascript" src="/javascripts/new_feed_resource.js"></script>

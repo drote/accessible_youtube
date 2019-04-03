@@ -10,6 +10,14 @@ require 'sinatra/content_for'
 require 'httparty'
 require 'yaml'
 
+DEMO_FEED_RESULTS = [
+  {
+    href: '/results?query=ארץ+נהדרת',
+    img: 'https://i.ytimg.com/vi/5Ce7lEqt_nQ/mqdefault.jpg',
+    title: 'ארץ נהדרת'
+  },
+]
+
 DEFAULT_SETTINGS = {
   gaze_aware: 'on',
   gaze_aware_rest: 'on',
@@ -166,11 +174,27 @@ get '/settings' do
   erb :settings_he
 end
 
-get '/feed_edit' do
-  @title = 'עריכת דף בית'
-  @user_id = request.cookies['id']
+get '/feed_resource_form' do
+  erb :new_feed_resource, :layout => false
+end
 
-  erb :feed_edit_he
+get '/youtube_resource' do
+  query_hash = get_query_hash(params)
+  query_string = Rack::Utils.build_query(query_hash)
+  url = get_url(params['q_type'])
+
+  HTTParty.get("#{url}?#{query_string}").to_s
+end
+
+get '/api/default_user_settings' do
+  JSON_DEFAULT_SETTINGS
+end
+
+get '/api/user_feed/:user_id' do
+  feed = JSON.generate(DEMO_FEED_RESULTS)
+
+  status 200
+  feed
 end
 
 post '/api/user_settings/:user_id' do
@@ -191,18 +215,6 @@ get '/api/user_settings/:user_id' do
   settings
 end
 
-get '/api/default_user_settings' do
-  JSON_DEFAULT_SETTINGS
-end
-
-get '/youtube_resource' do
-  query_hash = get_query_hash(params)
-  query_string = Rack::Utils.build_query(query_hash)
-  url = get_url(params['q_type'])
-
-  HTTParty.get("#{url}?#{query_string}").to_s
-end
-
 not_found do
   status 404
   erb :oops
@@ -211,3 +223,4 @@ end
 error 403 do
   'The requested resource cannot be found'
 end
+

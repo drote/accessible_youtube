@@ -179,6 +179,7 @@ main > p {
 	margin-bottom: calc(5vh / (var(--figuresPerCol) - 1));
 	overflow: hidden;
 	position: relative;
+	text-decoration: none;
 	width: var(--figureWidth);
 }
 
@@ -206,6 +207,7 @@ img {
 }
 
 figcaption {
+	color: #000;
 	font-size: var(--figFontSize);
 	text-align: center;
 	height: 20%;
@@ -346,7 +348,7 @@ figcaption {
 	width: 100%;
 	height: 100%;
 	background: repeating-linear-gradient(90deg, #ccccccbf, #ccccccbf 30px, #dbdbdbbf 30px, #dbdbdbbf 60px);
-}	
+}
 
 /* YOUTUBE PLAYER */
 #player_container {
@@ -477,24 +479,6 @@ form input[type="reset"] {
   box-shadow: inset 0 0 4px 1px #b22222;
 }
 
-/* FEED EDIT FORM */
-.wrpper dl,
-.wrapper dt,
-.wrapper dd {
-	font-size: 1rem;
-}
-
-.wrapper dl {
-	box-shadow: none;
-	margin: 0;
-	padding: 7px 9px;
-}
-
-.wrapper label {
-	display: block;
-}
-
-input[form="feed"] {
-	margin-right: 150px;
-	width: 20%;
+#feed fieldset {
+	width: 75%;
 }

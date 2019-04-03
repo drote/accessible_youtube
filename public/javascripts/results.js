@@ -63,20 +63,27 @@ $(function() {
 			});
 		}
 
-		const parseForTemplate = function(vid) {
+		const feedResource = function(userId) {
+			return $.ajax({
+				url: '/api/user_feed/' + userId,
+				dataType: 'json',
+			});
+		}
+
+		const parseForTemplate = function(resource) {
 			let obj = {};
 			let vidId;
 
-			if (vid.id) {
-				vidId = vid.id.videoId;
+			if (resource.id) {
+				vidId = resource.id.videoId;
 			} else {
-				vidId = vid.snippet.resourceId.videoId;
+				vidId = resource.snippet.resourceId.videoId;
 			}
 
 			obj['id'] = vidId;
-			obj['img'] = vid.snippet.thumbnails[this.thumbSize].url;
-			obj['title'] = vid.snippet.title;
-			obj['description'] = vid.snippet.description;
+			obj['img'] = resource.snippet.thumbnails[this.thumbSize].url;
+			obj['title'] = resource.snippet.title;
+			obj['description'] = resource.snippet.description;
 
 			return obj;
 		}
@@ -100,6 +107,13 @@ $(function() {
 				return this;
 			},
 			getResults(more) {
+				if (this.feedResultQuery()) {
+					return this.getFeedResults();
+				}
+
+				return this.getYoutubeResults(more);
+			},
+			getYoutubeResults(more) {
 				let that = this;
 				let token;
 
@@ -109,8 +123,16 @@ $(function() {
 
 				return youtubeResource(this.queryType, this.maxResults, this.query, this.embeddableParam(), token, this.thumbSize)
 							.then(function(response) {
-								that.addResults(response.items, response.nextPageToken);
+								that.addResults(response.items, response.nextPageToken, true);
 							});
+			},
+			getFeedResults() {
+				let that = this;
+
+				return feedResource(this.query)
+							 .then(function(response) {
+							 	 that.addResults(response, null);
+							 });
 			},
 			getPlaylistInfo(id) {
 				return youtubeResource('playlist_info', '1', id);
@@ -121,9 +143,14 @@ $(function() {
 			getChannelInfo(id) {
 				return youtubeResource('chan_info', '1', id);
 			},
-			addResults(vids, nextPageToken) {
-				this.allResults.push(vids.map(parseForTemplate.bind(this)));
-				this.nextPageToken = nextPageToken;
+			addResults(resources, nextPageToken, youtubeResource) {
+				if (youtubeResource) {
+					this.allResults.push(resources.map(parseForTemplate.bind(this)));
+					this.nextPageToken = nextPageToken;
+					return;
+				}
+
+				this.allResults.push(resources);
 			},
 			getResultPage(n) {
 				return this.allResults[n];
@@ -142,6 +169,9 @@ $(function() {
 			},
 			embeddableParam() {
 				return this.searchEmbeddable ? 'true' : 'any';
+			},
+			feedResultQuery() {
+				return this.queryType === 'feed';
 			},
 		};
 	})();
@@ -271,6 +301,7 @@ $(function() {
 			'chanId': 'channel',
 			'relatedToVidId': 'related_videos',
 			'vidId': 'direct_play',
+			'feed': 'feed',
 		}
 
 		const empty = ($elm) => $elm.length === 0;
@@ -361,8 +392,27 @@ $(function() {
 			this.cancelGazeAction();
 		}
 
-		const vidClick = function(e) {
+		const resourceClick = function(e) {
+			e.preventDefault();
+
 			let $wrapper = $(e.currentTarget);
+
+			if (this.inEditMode()) {
+				$('<iframe>', {
+   				src: '/feed_resource_form',
+				  id:  'resourceFormFrame',
+				  frameborder: 0,
+				  scrolling: 'no'
+				}).appendTo($wrapper);
+				return;
+			}
+
+			let href = $wrapper.attr('href');
+
+			if (href) {
+				this.goToLink(href);
+				return;
+			}
 
 			this.startVideo($wrapper);
 		}
@@ -371,6 +421,12 @@ $(function() {
 			let key = this.onGazeBreak() ? 'o' : 'g';
 
 			this.respondToNavKey(key);
+		}
+
+		const editFeedClick = function(e) {
+			e.preventDefault();
+
+			this.startEditMode();
 		}
 
 		return {
@@ -382,6 +438,7 @@ $(function() {
 			userSettings: null,
 			userId: null,
 			gazeBreak: false,
+			editMode: false,
 
 			init() {
 				this.getTemplates();
@@ -390,10 +447,12 @@ $(function() {
 
 				if (this.directPlay()) {
 					this.directPlayProtocol();
-					return;
+				} else if (this.feedRender()) {
+					this.feedProtocol();
+				} else {
+					this.searchVidsProtocol();
 				}
 
-				this.searchVidsProtocol();
 			},
 			getTemplates() {
 				let that = this;
@@ -404,8 +463,9 @@ $(function() {
 					if ($temp.hasClass('partial')) {
 						Handlebars.registerPartial($temp.attr('id'), $temp.html());
 					}
+					let templateName = $temp.attr('id').replace('_template', '');
 
-					that.templates[$temp.attr('id')] = Handlebars.compile($temp.html());
+					that.templates[templateName] = Handlebars.compile($temp.html());
 				});
 
 				$templates.remove();
@@ -415,9 +475,10 @@ $(function() {
 				$body.on('mouseenter', '.clickable', mouseInGeneric.bind(this));
 				$body.on('mouseleave', '.clickable, .wrapper', mouseOutGeneric.bind(this));
 				$body.on('click', '.clickable', this.cancelGazeAction.bind(this));
+				$body.on('click', '#edit_feed', editFeedClick.bind(this));
 				$content.on('mouseenter', '.wrapper', vidMouseIn.bind(this));
 				// $content.on('mouseleave', '.wrapper', vidMouseOut.bind(this));
-				$content.on('click', '.wrapper', vidClick.bind(this));
+				$content.on('click', '.wrapper', resourceClick.bind(this));
 				$controlsContainer.on('click', '#new_search.clickable', this.goHome);
 				$controlsContainer.on('click', '#pg_up.clickable', () => this.respondToNavKey('pageUp'));
 				$controlsContainer.on('click', '#pg_down.clickable', () => this.respondToNavKey('pageDown'));
@@ -432,7 +493,7 @@ $(function() {
 
 				for (let pair of urlParams.entries()) {
 					this.queryType = QUERY_TYPES[pair[0]];
-					this.query = pair[1];
+					this.query = pair[1] || this.userId;
 				}
 
 				$userId.remove();
@@ -458,6 +519,16 @@ $(function() {
 
 							this.startVidFromParams();
 						});
+			},
+			feedProtocol() {
+				this.initSettings()
+						.then(() => this.initFeedResults())
+						.then(() => {
+							this.initDisplay();
+							this.initNavigationManager();
+							this.checkStartGazeBreak();
+						})
+						.fail(() => this.alertFailure());
 			},
 			initSettings() {
 				const that = this;
@@ -489,6 +560,14 @@ $(function() {
 			},
 			getMoreResults() {
 				return this.resultsManager.getResults('more');
+			},
+			initFeedResults() {
+				this.resultsManager = Object.create(ResultsManager)
+																		.init(this.query, this.queryType,
+																					this.vidsPerPage(), null,
+																					null);
+
+				return this.resultsManager.getResults();
 			},
 			initDisplay() {
 				feather.replace();
@@ -543,6 +622,9 @@ $(function() {
 					case 'related_videos':
 						this.setupRelatedVidsHeader();
 						break;
+					case 'feed':
+						this.setupFeedHeader();
+						break;
 					default:
 						this.setupSearchHeader();
 				}
@@ -553,29 +635,36 @@ $(function() {
 			directPlay() {
 				return this.queryType === 'direct_play';
 			},
+			feedRender() {
+				return this.queryType === 'feed';
+			},
 			checkStartGazeBreak() {
 				if (this.gaRestMode()) this.startGazeBreak();
 			},
 			setupSearchHeader() {
-				this.adjustHeaderContent({title: this.query}, this.templates.search_header_template);
+				this.adjustHeaderContent({title: this.query}, this.templates.search_header);
 			},
 			setupPlaylistHeader() {
 				let infoFunc = this.resultsManager.getPlaylistInfo;
-				let template = this.templates.playlist_header_template;
+				let template = this.templates.playlist_header;
 
 				this.getInfoSetHeader(infoFunc, template);
 			},
 			setupChannelHeader() {
 				let infoFunc = this.resultsManager.getChannelInfo;
-				let template = this.templates.channel_header_template;
+				let template = this.templates.channel_header;
 
 				this.getInfoSetHeader(infoFunc, template);
 			},
 			setupRelatedVidsHeader() {
 				let infoFunc = this.resultsManager.getVidInfo;
-				let template = this.templates.related_vids_header_template;
+				let template = this.templates.related_vids_header;
 
 				this.getInfoSetHeader(infoFunc, template);
+			},
+			setupFeedHeader() {
+				this.adjustHeaderContent({title: 'D-Bur Tube Feed'}, this.templates.feed_header);
+				feather.replace();
 			},
 			getInfoSetHeader(infoFunc, template) {
 				let that = this;
@@ -591,14 +680,14 @@ $(function() {
 				$title.text(`D-Bur Tube (${title})`);
 			},
 			initNavControls() {
-				let gaButton = this.templates.ga_break_button_template();
+				let gaButton = this.templates.ga_break_button();
 				$controlsContainer.append(gaButton);
 
 				this.renderNavControls();
 				this.adjustGaRestButton();
 			},
 			renderNavControls() {
-				let html = this.templates.nav_controls_template();
+				let html = this.templates.nav_controls();
 				$controlsContainer.children('.play_control').remove();
 				$controlsContainer.append(html);
 
@@ -607,7 +696,7 @@ $(function() {
 				}, 1000);
 			},
 			renderPlayControls() {
-				let html = this.templates.play_controls_template();
+				let html = this.templates.play_controls();
 				$controlsContainer.children('.nav_control').remove();
 				$controlsContainer.append(html);
 
@@ -639,7 +728,7 @@ $(function() {
 			},
 			appendResultPageContent(n) {
 				let vids = this.resultsManager.getResultPage(n);
-				let html = this.templates.thumbnails_template({ vids }).replace('-->', '');
+				let html = this.templates.thumbnails({ vids }).replace('-->', '');
 
 				$content.empty();
 				$content.append(html);
@@ -793,17 +882,8 @@ $(function() {
 					$elm.get(0).click();
 
 					this.removeProgressCircle();
-					$elm.removeClass('clickable');
-					setTimeout(() => $elm.addClass('clickable'), 500);
 				}, clickDelay );
 			},
-			// pauseGaForBuffer() {
-			// 	this.startGazeBreak();
-
-			// 	if (!this.gaRestMode()) {
-			// 		setTimeout(this.endGazeBreak.bind(this), 1000);
-			// 	}
-			// },
 			cancelGazeAction() {
 				clearInterval(timeoutVar);
 				this.removeProgressCircle();
@@ -836,7 +916,7 @@ $(function() {
 
 				switch (key) {
 					case 'enter':
-						this.startVideo($selected);
+						$selected.get(0).click();
 						break;
 					case 'home':
 						this.goHome();
@@ -882,11 +962,28 @@ $(function() {
 					this.goToRelatedVideosPage(vidId);
 				}
 			},
+			startEditMode() {
+				this.startGazeBreak();
+				$('.selected').removeClass('selected');
+				this.wrappers().addClass('editing');
+				this.checkRenderEmptyWrapper();
+
+				this.editMode = true;
+			},
+			checkRenderEmptyWrapper() {
+				if (this.wrappers().length < this.vidsPerPage()) {
+					let $emptyWrapper = this.templates.empty_wrapper();
+					$content.append($emptyWrapper);
+				}
+			},
 			goHome() {
-				window.location.href = '/search';
+				this.goToLink('/search');
 			},
 			goToRelatedVideosPage(id) {
-				window.location.href = RELATED_VIDS_PAGE_URL + id;
+				this.goToLink(RELATED_VIDS_PAGE_URL + id);
+			},
+			goToLink(href) {
+				window.location.href = href;
 			},
 			escapePlayProtocol() {
 				this.closePlayer();
@@ -952,7 +1049,7 @@ $(function() {
 				if (this.showControls()) {
 					this.toggleGaBreakButton();
 				}
-				
+
 				if (!this.gaRestMode()) {
 					$('.button').not('#ga_break_toggle').addClass('clickable');
 				}
@@ -971,6 +1068,9 @@ $(function() {
 			},
 			playMode() {
 				return $playerContainer.is(':visible');
+			},
+			inEditMode() {
+				return this.editMode === true;
 			},
 			onGazeBreak() {
 				return this.gazeBreak;
