@@ -1,10 +1,13 @@
 $(function() {
+	Handlebars.registerPartial('imagePartial', $('#image_partial').html());
+
 	$fields = $('#fields');
 
 	const QUERY_STRINGS = {
 		playlist: 'q_type=playlist_info&max_results=1&q_param=',
 		channel: 'q_type=chan_info&max_results=1&q_param=',
 		video: 'q_type=vid_info&max_results=1&q_param=',
+		search: 'q_type=search&max_results=5&thumb_size=medium&search_embeddable=any&q_param=',
 	}
 
 	const HREF = {
@@ -34,9 +37,7 @@ $(function() {
 		}
 	}
 
-	const craftLink = (resourceId, type) => {
-
-	}
+	const vidsToImages = (vid) => vid.snippet.thumbnails.medium.url;
 
 	const aClick = function(e) {
 		e.preventDefault();
@@ -53,6 +54,39 @@ $(function() {
 		this.dealWithResource(resource);
 	}
 
+	const imgSelectorLeft = function(e) {
+		$currentImg = $(e.target).siblings('div').find('img:visible');
+		$next = $currentImg.prev();
+
+		if ($next.length === 0) {
+			$next = $currentImg.parent().find('img').last();
+		}
+
+		$currentImg.hide();
+		$next.show();
+	}
+
+	const imgSelectorRight = function(e) {
+		$currentImg = $(e.target).siblings('div').find('img:visible');
+		$next = $currentImg.next();
+
+		if ($next.length === 0) {
+			$next = $currentImg.parent().find('img').first();
+		}
+
+		$currentImg.hide();
+		$next.show();
+	}
+
+	const selectImgClick = function(e) {
+		e.preventDefault();
+
+		selected = $(e.target).siblings('div').find('img:visible').attr('src');
+
+		this.logSearchToExport(selected);
+		this.saveAndPreview();
+	}
+
 	const resource = {
 		exportObj: {},
 		templates: {},
@@ -61,6 +95,7 @@ $(function() {
 			this.getTemplates();
 			this.bindEvents();
 			this.displayHome();
+			this.getIds();
 		},
 		getTemplates() {
 			let that = this;
@@ -74,10 +109,17 @@ $(function() {
 		bindEvents() {
 			$(document.body).on('click', '.type', aClick.bind(this))
 			$(document.body).on('click', '#select_resource', selectResourceClick.bind(this));
+			$(document.body).on('click', '.feather-chevron-left', imgSelectorLeft)
+			$(document.body).on('click', '.feather-chevron-right', imgSelectorRight)
+			$(document.body).on('click', '#select_img', selectImgClick.bind(this));	
 		},
 		displayHome() {
 			let html = this.templates.type_selection();
 			$fields.html(html);
+		},
+		getIds() {
+			this.userId = $('#user_id').html();
+			this.resourceIdx = $('#resource_idx').html();
 		},
 		renderResourceSelection() {
 			let label = RESOUCE_SELECTION_TEXT[this.type];
@@ -91,28 +133,22 @@ $(function() {
 					.then(() => {
 						this.exportObj.href = HREF[this.type] + resourceId;
 
-						if (this.type === 'search') {
-							this.renderImageSelector();
-							return;
+						if (this.type !== 'search') {
+							this.saveAndPreview();
 						}
-
-						this.saveAndPreview();
 					})
 					.fail(() => alert('הלינק המבוקש אינו תקין'));
 		},
 		saveAndPreview() {
 			let that = this;
 
-			this.saveResource()
-					.then(function(response) {
-						that.renderPreview(response);
-					});
+			this.saveAndPreview();
+		},
+		logSearchToExport(img) {
+			this.exportObj['img'] = img;
+			this.exportObj['title'] = this.searchQuery;
 		},
 		checkValidiyGetImage(resourceId) {
-			if (this.type === 'search') {
-				return Promise.resolve();
-			}
-
 			let queryString = QUERY_STRINGS[this.type] + resourceId;
 			let that = this;
 
@@ -123,19 +159,34 @@ $(function() {
 			}).then(function(response) {
 				if (response.items.length === 0) {
 					return Promise.reject();
+				} else if (that.type === 'search') {
+					that.renderImageSelector(response.items.map(vidsToImages), resourceId);
+					return;
 				}
 
 				that.logToExport(response.items[0]);
 			});
 		},
-		saveResource() {
+		saveAndPreview() {
+			let url = `/api/user_feed/${this.userId}/${this.resourceIdx}`
+
 			return $.ajax({
-				data: JSON.parse(this.exportObj);
+				url,
+				data: this.exportObj,
+				method: 'post',
+			}).done(function(response) {
+				$fields.html(response);
 			});
 		},
 		logToExport(item) {
 			this.exportObj.title = item.snippet.title;
 			this.exportObj.img = item.snippet.thumbnails.medium.url;
+		},
+		renderImageSelector(images, query) {
+			this.searchQuery = query;
+			let html = this.templates.image_selector({ images });
+			$fields.html(html);
+			feather.replace();
 		},
 	};
 

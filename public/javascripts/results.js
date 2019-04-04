@@ -396,11 +396,12 @@ $(function() {
 			e.preventDefault();
 
 			let $wrapper = $(e.currentTarget);
+			let idx = $wrapper.index();
 
 			if (this.inEditMode()) {
 				$('<iframe>', {
-   				src: '/feed_resource_form',
-				  id:  'resourceFormFrame',
+   				src: `/feed_resource_form/${idx}`,
+				  id:  'resource_form',
 				  frameborder: 0,
 				  scrolling: 'no'
 				}).appendTo($wrapper);

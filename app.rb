@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-
+require 'pry'
 require 'dotenv'
 Dotenv.load
 
@@ -118,14 +118,24 @@ def set_cookie_and_log_new_user
   log_new_user_to_users_hash(user_id)
 end
 
-def commit_settings_to_user_hash(id, settings)
+def commit_settings_to_user_hash(id, settings, feed)
   new_hash = users_hash.clone
-  new_hash[id] = { 'settings' => settings }
+  new_hash[id] = { 'settings' => settings, 'feed' => feed }
   File.open(USERS_HASH_LOCATION, 'w') { |file| file.write(new_hash.to_yaml) }
 end
 
+def add_resource_to_user_feed(user_id, resource_idx, resource_hash)
+  new_hash = users_hash.clone
+  new_hash[user_id]['feed'][resource_idx] = resource_hash
+  File.open(USERS_HASH_LOCATION, 'w') { |file| file.write(new_hash.to_yaml) }
+end
+
+def get_user_feed(user_id)
+  users_hash[user_id]['feed']
+end
+
 def log_new_user_to_users_hash(id)
-  commit_settings_to_user_hash(id, nil)
+  commit_settings_to_user_hash(id, nil, [])
 end
 
 def make_new_cookie(id)
@@ -146,6 +156,13 @@ def next_user_id
   return 0 if users_hash.empty?
 
   users_hash.keys.max + 1
+end
+
+def make_resource_html(resource)
+  "<figure data-vid_id=\"\">
+      <img src=\"#{resource['img']}\" alt=\"\">
+      <figcaption>#{resource['title']}</figcaption>
+    </figure>"
 end
 
 before do
@@ -174,7 +191,10 @@ get '/settings' do
   erb :settings_he
 end
 
-get '/feed_resource_form' do
+get '/feed_resource_form/:idx' do
+  @user_id = request.cookies['id']
+  @resource_idx = params[:idx].to_i
+
   erb :new_feed_resource, :layout => false
 end
 
@@ -191,7 +211,8 @@ get '/api/default_user_settings' do
 end
 
 get '/api/user_feed/:user_id' do
-  feed = JSON.generate(DEMO_FEED_RESULTS)
+  user_id = params[:user_id].to_i
+  feed = JSON.generate(get_user_feed(user_id))
 
   status 200
   feed
@@ -206,6 +227,18 @@ post '/api/user_settings/:user_id' do
 
   status 200
   settings_json
+end
+
+post '/api/user_feed/:user_id/:resource_idx' do
+  user_id = params[:user_id].to_i
+  resource_idx = params[:resource_idx].to_i
+  new_resource = Rack::Utils.parse_nested_query(request.body.read)
+  new_resource_preview = make_resource_html(new_resource)
+
+  add_resource_to_user_feed(user_id, resource_idx, new_resource)
+
+  status 200
+  new_resource_preview
 end
 
 get '/api/user_settings/:user_id' do

@@ -482,3 +482,23 @@ form input[type="reset"] {
 #feed fieldset {
 	width: 75%;
 }
+
+#resource_form {
+	position: absolute;
+	top: 0;
+}
+
+#fields {
+	display: flex;
+	flex-wrap: wrap;
+	align-content: space-between;
+	justify-content: center;
+}
+
+img + img {
+	display: none;
+}
+
+#fields img {
+	width: 90%;
+}
