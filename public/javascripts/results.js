@@ -84,6 +84,7 @@ $(function() {
 			obj['img'] = resource.snippet.thumbnails[this.thumbSize].url;
 			obj['title'] = resource.snippet.title;
 			obj['description'] = resource.snippet.description;
+			obj['href'] = '#';
 
 			return obj;
 		}
@@ -359,6 +360,8 @@ $(function() {
 		}
 
 		const keydownHandler = function(e) {
+			if (this.inEditMode()) return;
+
 			let key = String(e.which);
 
 			if (this.playMode()) {
@@ -370,7 +373,7 @@ $(function() {
 		}
 
 		const vidMouseIn = function(e) {
-			if (this.gaInactive()) return;
+			if (this.gaInactive() || this.inEditMode()) return;
 
 			let $wrapper = $(e.target);
 
@@ -383,39 +386,56 @@ $(function() {
 		}
 
 		const mouseInGeneric = function(e) {
+			if (this.inEditMode()) return;
+
 			let $elm = $(e.currentTarget);
 
 			this.gazeGeneric($elm);
 		}
 
 		const mouseOutGeneric = function(e) {
+			if (this.inEditMode()) return;
+
 			this.cancelGazeAction();
 		}
 
 		const resourceClick = function(e) {
 			e.preventDefault();
+			if (this.inEditMode()) return;
 
 			let $wrapper = $(e.currentTarget);
-			let idx = $wrapper.index();
-
-			if (this.inEditMode()) {
-				$('<iframe>', {
-   				src: `/feed_resource_form/${idx}`,
-				  id:  'resource_form',
-				  frameborder: 0,
-				  scrolling: 'no'
-				}).appendTo($wrapper);
-				return;
-			}
-
 			let href = $wrapper.attr('href');
 
-			if (href) {
+			if (href !== '#') {
 				this.goToLink(href);
 				return;
 			}
 
 			this.startVideo($wrapper);
+		}
+
+		const emptyWrapperClick = function(e) {
+			e.preventDefault();
+			let $wrapper = $(e.target.closest('.wrapper'));
+
+			this.checkRenderEmptyWrapper();
+			this.attachIframeToWrapper($wrapper);
+		}
+
+		const editWrapperClick = function(e) {
+			e.preventDefault();
+			let $wrapper = $(e.target.closest('.wrapper'));
+			let id = $wrapper.attr('id').replace('wrapper_', '');
+
+			this.attachIframeToWrapper($wrapper, id);
+		}
+
+		const deleteWrapperClick = function(e) {
+			e.preventDefault();
+			let $wrapper = $(e.target.closest('.wrapper'));
+			let id = $wrapper.attr('id').replace('wrapper_', '');
+
+			this.deleteFeedResource($wrapper, id);
 		}
 
 		const gaToggleClick = function() {
@@ -426,6 +446,11 @@ $(function() {
 
 		const editFeedClick = function(e) {
 			e.preventDefault();
+
+			if (this.inEditMode()) {
+				this.endEditMode();
+				return;
+			}
 
 			this.startEditMode();
 		}
@@ -478,8 +503,10 @@ $(function() {
 				$body.on('click', '.clickable', this.cancelGazeAction.bind(this));
 				$body.on('click', '#edit_feed', editFeedClick.bind(this));
 				$content.on('mouseenter', '.wrapper', vidMouseIn.bind(this));
-				// $content.on('mouseleave', '.wrapper', vidMouseOut.bind(this));
+				$content.on('click', '.empty', emptyWrapperClick.bind(this));
 				$content.on('click', '.wrapper', resourceClick.bind(this));
+				$content.on('click', '.edit_wrapper', editWrapperClick.bind(this));
+				$content.on('click', '.delete_wrapper', deleteWrapperClick.bind(this));
 				$controlsContainer.on('click', '#new_search.clickable', this.goHome);
 				$controlsContainer.on('click', '#pg_up.clickable', () => this.respondToNavKey('pageUp'));
 				$controlsContainer.on('click', '#pg_down.clickable', () => this.respondToNavKey('pageDown'));
@@ -724,7 +751,7 @@ $(function() {
 			},
 			renderPageNumber(n) {
 				this.appendResultPageContent(n);
-				this.fixWrapperMargins();
+				// this.fixWrapperMargins();
 				this.currentPageNumber = n;
 			},
 			appendResultPageContent(n) {
@@ -734,10 +761,10 @@ $(function() {
 				$content.empty();
 				$content.append(html);
 			},
-			fixWrapperMargins() {
-				$(`.wrapper:nth-of-type(${this.colNumber()}n)`).css('margin-left', '0');
-				$(`.wrapper:nth-of-type(${this.colNumber()}n + 1)`).css('margin-right', getRightMarginPercent(this.colNumber()));
-			},
+			// fixWrapperMargins() {
+			// 	$(`.wrapper:nth-of-type(${this.colNumber()}n)`).css('margin-left', '0');
+			// 	$(`.wrapper:nth-of-type(${this.colNumber()}n + 1)`).css('margin-right', getRightMarginPercent(this.colNumber()));
+			// },
 			selectWrapper(idx) {
 				$('.selected').removeClass('selected');
 				let $wrapper = this.wrappers(idx);
@@ -811,6 +838,32 @@ $(function() {
 				page === 'next' ? this.renderNextPage() : this.renderPrevPage();
 
 				this.selectWrapper(idx);
+			},
+			attachIframeToWrapper($wrapper, id) {
+				$wrapper.removeClass('editing').addClass('empty').find('iframe').remove();
+				let url = '/feed_resource_form';
+
+				if (id) {
+					url = '/edit_resource/' + id;
+				}
+
+				if ($wrapper.children('iframe').length === 0) {
+					$('<iframe>', {
+	   				src: url,
+					  id:  'resource_form',
+					  frameborder: 0,
+					  scrolling: 'no'
+					}).appendTo($wrapper);
+					return;
+				}
+			},
+			deleteFeedResource($wrapper, resourceId) {
+				$.ajax({
+					method: 'delete',
+					url: `/api/user_feed/${this.userId}/${resourceId}`,
+				}).then(function() {
+					$wrapper.hide();
+				});
 			},
 			wrappers(n) {
 				let $wrappers = $('.wrapper');
@@ -964,12 +1017,23 @@ $(function() {
 				}
 			},
 			startEditMode() {
+				$('.feather-edit-2').css('color', '#d36767');
 				this.startGazeBreak();
 				$('.selected').removeClass('selected');
 				this.wrappers().addClass('editing');
 				this.checkRenderEmptyWrapper();
 
 				this.editMode = true;
+			},
+			endEditMode() {
+				this.editMode = false;
+				$('.feather-edit-2').css('color', '#3d4f30');
+
+				this.initFeedResults()
+						.then(() => {
+							this.renderPageNumber(0);
+							this.selectWrapper(0);
+						});
 			},
 			checkRenderEmptyWrapper() {
 				if (this.wrappers().length < this.vidsPerPage()) {

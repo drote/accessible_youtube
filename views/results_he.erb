@@ -12,7 +12,11 @@
 <div id="controls"></div>
 
 <script type="text/handlebars-x" id="vid_thumb_partial" class="partial">
-  <a href="{{href}}" class="wrapper">
+  <div href="{{href}}" class="wrapper" id="wrapper_{{ id }}">
+    <div class="edit_bar">
+      <a class="delete_wrapper"></a>
+      <a class="edit_wrapper"></a>
+    </div>
     <figure
     data-vid_id={{id}}>
       <img src="{{img}}" alt="{{description}}">
@@ -23,13 +27,16 @@
         {{{shortenTitle title}}}
       </figcaption>
     </figure>
-  </a>
+  </div>
 </script>
 
 <script type="text/handlebars-x" id="empty_wrapper_template">
-  <a class="wrapper empty editing">
-    <figcaption>הוסף חיפוש שמור</figcaption>
-  </a>
+<div href="#" class="wrapper empty" id="wrapper_undefined">
+  <div class="edit_bar">
+    <a class="delete_wrapper"></a>
+    <a class="edit_wrapper"></a>
+  </div>
+</div>
 </script>
 
 <script type="text/handlebars-x" id="thumbnails_template">

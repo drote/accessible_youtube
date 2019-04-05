@@ -18,7 +18,7 @@ $(function() {
 	}
 
 	const RESOUCE_SELECTION_TEXT = {
-		search: 'מוסג חיפוש',
+		search: 'חיפוש',
 		playlist: 'הדבק לינק לרשימה',
 		channel: 'הדבק לינק לערוץ',
 		video: 'הדבק לינק לסרטון',
@@ -54,7 +54,7 @@ $(function() {
 		this.dealWithResource(resource);
 	}
 
-	const imgSelectorLeft = function(e) {
+	const imgSelectorUp = function(e) {
 		$currentImg = $(e.target).siblings('div').find('img:visible');
 		$next = $currentImg.prev();
 
@@ -65,8 +65,8 @@ $(function() {
 		$currentImg.hide();
 		$next.show();
 	}
-
-	const imgSelectorRight = function(e) {
+;
+	const imgSelectorDown = function(e) {
 		$currentImg = $(e.target).siblings('div').find('img:visible');
 		$next = $currentImg.next();
 
@@ -109,8 +109,8 @@ $(function() {
 		bindEvents() {
 			$(document.body).on('click', '.type', aClick.bind(this))
 			$(document.body).on('click', '#select_resource', selectResourceClick.bind(this));
-			$(document.body).on('click', '.feather-chevron-left', imgSelectorLeft)
-			$(document.body).on('click', '.feather-chevron-right', imgSelectorRight)
+			$(document.body).on('click', '.feather-chevron-up', imgSelectorUp);
+			$(document.body).on('click', '.feather-chevron-down', imgSelectorDown);
 			$(document.body).on('click', '#select_img', selectImgClick.bind(this));	
 		},
 		displayHome() {
@@ -120,6 +120,10 @@ $(function() {
 		getIds() {
 			this.userId = $('#user_id').html();
 			this.resourceIdx = $('#resource_idx').html();
+			this.exportObj.id = this.resourceIdx;
+
+			$wrapper = $(`#wrapper_undefined`, window.parent.document);
+			$wrapper.attr('id', `wrapper_${this.resourceIdx}`);
 		},
 		renderResourceSelection() {
 			let label = RESOUCE_SELECTION_TEXT[this.type];
@@ -138,11 +142,6 @@ $(function() {
 						}
 					})
 					.fail(() => alert('הלינק המבוקש אינו תקין'));
-		},
-		saveAndPreview() {
-			let that = this;
-
-			this.saveAndPreview();
 		},
 		logSearchToExport(img) {
 			this.exportObj['img'] = img;
@@ -168,14 +167,23 @@ $(function() {
 			});
 		},
 		saveAndPreview() {
-			let url = `/api/user_feed/${this.userId}/${this.resourceIdx}`
+			let url = `/api/user_feed/${this.userId}`
+			let wrapperId = this.resourceIdx;
+			let method = 'post';
+
+			if (window.location.href.split('/').includes('edit_resource')) {
+				url = `/api/user_feed/${this.userId}/${this.resourceIdx}`;
+				method = 'put';
+			}
+
 
 			return $.ajax({
 				url,
 				data: this.exportObj,
-				method: 'post',
+				method,
 			}).done(function(response) {
-				$fields.html(response);
+				$wrapper = $(`#wrapper_${wrapperId}`, window.parent.document);
+				$wrapper.replaceWith($(response));
 			});
 		},
 		logToExport(item) {

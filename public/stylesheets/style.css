@@ -14,6 +14,11 @@ body {
 	margin: 0;
 }
 
+a {
+	text-decoration: none;
+	color: black;
+}
+
 /* HEADER */
 header {
 	background-color: var(--mainLightColor);
@@ -158,10 +163,13 @@ main > p {
 #content {
 	background-color: var(--BGColor);
 	box-sizing: border-box;
+	display: flex;
+	flex-wrap: wrap;
+	align-content: flex-start;
 	font-family: "Franklin Gothic Medium", "Franklin Gothic", "ITC Franklin Gothic", Arial, sans-serif;
 	font-weight: bold;
 	height: 100%;
-	padding: 1% 2% 0 2%;
+	padding: 2% 2% 0 0;
 	position: absolute;
 	width: 100%;
 	z-index: -1;
@@ -175,7 +183,7 @@ main > p {
 	float: right;
 	font-size: 0;
 	height: var(--figureHeight);
-	margin-left: calc(5% / (var(--figuresPerRow) - 1));
+	margin-left: calc(7% / (var(--figuresPerRow) - 1));
 	margin-bottom: calc(5vh / (var(--figuresPerCol) - 1));
 	overflow: hidden;
 	position: relative;
@@ -185,6 +193,46 @@ main > p {
 
 .wrapper.selected {
 	box-shadow: 0 0 0 8px var(--selectColor);
+}
+
+.wrapper.editing .edit_bar {
+	display: block;
+}
+
+.edit_bar {
+	background-color: #c3c2c2af;
+	display: none;
+	height: 17%;
+	position: absolute;
+	width: 100%;
+	z-index: 7;
+}
+
+.delete_wrapper,
+.edit_wrapper {
+	cursor: pointer;
+	display: inline-block;
+	background-repeat: no-repeat;
+	background-position: center;
+	height: 100%;
+	width: 15%;
+	float: right;
+}
+
+.delete_wrapper {
+	background-image: url('../data/icons/x.svg');
+}
+
+.edit_wrapper {
+	background-image: url('../data/icons/edit-2.svg');
+}
+
+.delete_wrapper:hover {
+	background-color: red;
+}
+
+.edit_wrapper:hover {
+	background-color: yellow;
 }
 
 figure {
@@ -389,7 +437,8 @@ fieldset {
 
 dl,
 form input[type="submit"],
-form input[type="reset"] {
+form input[type="reset"],
+#fields input {
 	border-radius: 3px;
 	box-shadow: inset 0 0 4px 1px var(--highlightColor);
 	padding: 15px 25px;
@@ -439,7 +488,7 @@ select {
   background-repeat: no-repeat;
   background-size: 22px 22px;
   background-position: 2px 2px;
-	border: 1px solid var(--highlightColor);
+	border: 1px solid var(--highlightColoFr);
   font-size: 0.8rem;
   padding: 5px 10px;
 }
@@ -489,6 +538,7 @@ form input[type="reset"] {
 }
 
 #fields {
+	height: 80%;
 	display: flex;
 	flex-wrap: wrap;
 	align-content: space-between;
@@ -500,5 +550,52 @@ img + img {
 }
 
 #fields img {
+	width: 100%;
+}
+
+#fields .image_container {
+	margin: 0 auto;
 	width: 90%;
+}
+
+#fields p {
+	font-size: 1.3rem;
+	font-weight: 600;
+	margin-top: 10px;
+	text-align: center;
+	width: 100%;
+}
+
+#fields ul {
+	display: flex;
+	flex-wrap: wrap;
+	align-content: space-between;
+	margin: 10px 20px 0 0;
+	width: 100%;
+	height: 70%;
+}
+
+#fields li {
+	margin-bottom: 5px;
+	width: 100%;
+}
+
+#fields a {
+	width: 100%;
+	text-align: center;
+	color: var(--highlightColor);
+}
+
+#fields a:hover {
+	color: #d36767;
+}
+
+#fields input {
+	height: 25px;
+	width: 80%;
+}
+
+.feather-chevron-up,
+.feather-chevron-down {
+	cursor: pointer;
 }
